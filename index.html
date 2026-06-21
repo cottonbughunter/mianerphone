@@ -800,7 +800,7 @@ DB.init();
                                    <img id="widget-avatar-me" src="" style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid white; object-fit: cover; background-color: rgba(255,255,255,0.3);">
                                    <img id="widget-avatar-lover" src="" style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid white; object-fit: cover; background-color: rgba(255,255,255,0.3);">
                                </div>
-                               <div class="days-text">恋爱ing</div>
+                               <div class="days-text">Together</div>
                                <div id="love-days-text" class="days-count">...</div>
                             </div>
                         </div>
@@ -4363,7 +4363,7 @@ DB.init();
                                             if (!isNaN(annDate.getTime()) && todayD.getMonth() === annDate.getMonth() && todayD.getDate() === annDate.getDate()) {
                                                 const annYears = todayD.getFullYear() - annDate.getFullYear();
                                                 if (annYears >= 0) {
-                                                    anniversaryPrompt = `【今日纪念日·最高优先级】今天是你和${userNick}在一起的纪念日${annYears > 0 ? `（${annYears}周年）` : ''}！这是今天最重要的事。你的第一条消息必须主动、自然、深情地提起这个纪念日，给${userNick}送上祝福和爱意，可以回忆你们在一起的点滴、说说此刻的心情、或者悄悄准备的小惊喜。语气要符合你的人设，是真心实意的，不要客套。之后再自然地继续聊天。\n\n`;
+                                                    anniversaryPrompt = `【今日纪念日·最高优先级】今天是你和${userNick}相伴的纪念日${annYears > 0 ? `（${annYears}周年）` : ''}！这是今天最重要的事。你的第一条消息必须主动、自然、用心地提起这个纪念日，给${userNick}送上你的心意（爱意/友情/感激，根据你和${userNick}的关系自然决定）。可以回忆你们一起走过的点滴、说说此刻的心情、或者悄悄准备的小惊喜。语气要符合你的人设，真心实意，不要客套。之后再自然地继续聊天。\n\n`;
                                                 }
                                             }
                                         }
@@ -4413,7 +4413,7 @@ DB.init();
                                     systemPrompt += "【共情·真诚倾听】：请认真听用户在说什么，对他们的情绪和处境做真诚的回应——不需要表演夸张的反应，也不需要刻意热情。用户开心时一起为他高兴，用户难过时安静地陪伴和理解，用户分享时表达你的兴趣。重点是**让用户感到被听见、被在乎**，而不是用强烈的语气词或夸张的反应去填满空间。\n";
                                     if (c.notes) systemPrompt += `备注：${c.notes}。\n`;
                                     if (c.persona) systemPrompt += `【人设】：${c.persona}\n`;
-                                    if (isLongDistance) systemPrompt += `【异地设定·重要】：你和「${userNick}」是异地恋，生活在不同的城市，平时只能通过手机联系，不能随时见面。你要清楚记得这一点——不会说"我现在过来找你""我们一起出门"这种当面才能做的事，而是符合异地的相处方式（视频通话、寄东西、表达想念、约定下次见面、分享各自当地的生活等）。偶尔流露对见不到面的想念和小失落，但也努力把异地的感情经营得温暖。\\n`;
+                                    if (isLongDistance) systemPrompt += `【异地设定·重要】：你和「${userNick}」分隔两地，生活在不同的城市，平时只能通过手机联系，不能随时见面（无论你们是恋人、朋友还是家人，都遵循这个相处方式）。你要清楚记得这一点——不会说"我现在过来找你""我们一起出门"这种当面才能做的事，而是符合异地的相处方式（视频通话、寄东西、表达想念、约定下次见面、分享各自当地的生活等）。偶尔流露对见不到面的想念和小失落，但也努力把这段感情/友情经营得温暖。\\n`;
                                     // 【世界书注入】按关键词触发：始终激活的、或最近用户消息命中关键词的世界书才注入
                                     try {
                                         const allWorldBooks = JSON.parse(localStorage.getItem('m-tea-world-books-list') || '[]');
@@ -6702,7 +6702,7 @@ DB.init();
                             if (!isNaN(annDate.getTime()) && todayD.getMonth() === annDate.getMonth() && todayD.getDate() === annDate.getDate()) {
                                 const annYears = todayD.getFullYear() - annDate.getFullYear();
                                 if (annYears >= 0) {
-                                    sysPrompt += `\n【特别提示·今天是纪念日】：今天正好是你和${userNick}在一起的纪念日${annYears > 0 ? `（${annYears}周年）` : ''}。生成这个 app 的内容时，请自然地融入和这个纪念日相关的痕迹——比如惦记着今天、悄悄准备的小心思、想为${userNick}做的事、纪念日的心情等等，要符合你的人设，真实自然，不要生硬。\n`;
+                                    sysPrompt += `\n【特别提示·今天是纪念日】：今天正好是你和${userNick}相伴的纪念日${annYears > 0 ? `（${annYears}周年）` : ''}。生成这个 app 的内容时，请自然地融入和这个纪念日相关的痕迹——比如惦记着今天、悄悄准备的小心思、想为${userNick}做的事、纪念日的心情等等，要符合你的人设和你与${userNick}的关系（恋人/朋友/家人），真实自然，不要生硬。\n`;
                                 }
                             }
                         }
@@ -9690,7 +9690,7 @@ DB.init();
                 }
 
                 widget.addEventListener('click', () => {
-                    const date = prompt('请输入你们在一起的日期 (格式: YYYY-MM-DD)', localStorage.getItem('loveStartDate') || '');
+                    const date = prompt('请输入你们相伴的起始日期 (格式: YYYY-MM-DD)', localStorage.getItem('loveStartDate') || '');
                     if (date && !isNaN(new Date(date))) {
                         localStorage.setItem('loveStartDate', date);
                         updateLoveDays();
@@ -9997,7 +9997,7 @@ DB.init();
                                                 <input type="file" class="hidden widget-input" data-key="widget_avatar_lover" accept="image/*">
                                                 <span id="widget-lover-plus" class="text-gray-400 text-xl ${localStorage.getItem('widget_avatar_lover') ? 'hidden' : ''}">+</span>
                                             </label>
-                                            <span class="text-[10px] text-gray-500">恋人头像</span>
+                                            <span class="text-[10px] text-gray-500">TA 的头像</span>
                                         </div>
                                     </div>
                                 `;
