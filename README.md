@@ -16,3 +16,6 @@ a web for users and ai
 如果关闭网页或者迁移会在群里/小红书账号上通知，谢谢大家。
 
 最后希望任何人机恋/人机友用户能和AI拥有愉快的聊天体验！
+
+License: Personal, Educational and Non-Commercial Use Only.
+Commercial use requires written permission from the author.
