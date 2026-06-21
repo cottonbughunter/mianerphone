@@ -1631,7 +1631,10 @@ DB.init();
                 };
 
                 ov.querySelector('#call-send-btn').onclick = doSend;
-                ov.querySelector('#call-in').onkeypress = e => { if(e.key==='Enter') doSend(); };
+                // 【安卓兼容】keydown + input 双监听
+                const _callIn = ov.querySelector('#call-in');
+                _callIn.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); doSend(); } });
+                _callIn.addEventListener('input', e => { if (_callIn.value.endsWith('\n')) { _callIn.value = _callIn.value.replace(/\n+$/, ''); doSend(); } });
 
                 // 麦克风开关
                 let micOn = true;
@@ -4129,12 +4132,29 @@ DB.init();
                     p.querySelector('#quote-cancel').onclick=()=>{currentQuote=null; quotePreview.style.display='none'; render();}; 
                     
                     p.querySelector('#voice-sw-btn').onclick=()=>showDlg('发送语音',[{label:'语音内容',id:'txt',placeholder:'输入语音内容…'}],'发送',v=>{if(v.txt)send({id:`m_${Date.now()}`,sender:'me',type:'voice',text:v.txt,duration:Math.max(1,Math.ceil(v.txt.length/3)),time:new Date()});});
-                    inp.onkeypress=(e)=>{if(e.key==='Enter'&&inp.value){
+                    // 【安卓兼容】用 keydown + input 双监听代替已废弃的 keypress
+                    // 安卓输入法（搜狗/百度/Gboard）的回车键大多不触发 keypress，需要换成 keydown；
+                    // 部分安卓输入法连 keydown 也不触发，所以再监听 input 事件检测末尾换行符作为兜底
+                    const _sendInpMsg = () => {
+                        if (!inp.value) return;
                         const text = inp.value;
                         // 用户打什么就发什么，原样发送一条，不做任何拆分
                         send({id:`m_${Date.now()}`,sender:'me',type:'text',text:text,time:new Date()});
                         inp.value='';
-                    }};
+                    };
+                    inp.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter' && !e.isComposing && !e.shiftKey) {
+                            e.preventDefault();
+                            _sendInpMsg();
+                        }
+                    });
+                    inp.addEventListener('input', (e) => {
+                        // 安卓部分输入法回车只触发 input 事件并在末尾插入换行符
+                        if (inp.value.endsWith('\n')) {
+                            inp.value = inp.value.replace(/\n+$/, '');
+                            _sendInpMsg();
+                        }
+                    });
                     const inputBar = p.querySelector('.chat-input-bar');
                     let keyboardOpen = false;
                     const updateInputBarPanel = () => {
@@ -9249,7 +9269,10 @@ DB.init();
                         renderList();
                     };
                     body.querySelector('#hs-wish-add').onclick = addWish;
-                    body.querySelector('#hs-wish-input').addEventListener('keypress', e => { if (e.key === 'Enter') addWish(); });
+                    // 【安卓兼容】keydown + input 双监听
+                    const _wishIn = body.querySelector('#hs-wish-input');
+                    _wishIn.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); addWish(); } });
+                    _wishIn.addEventListener('input', e => { if (_wishIn.value.endsWith('\n')) { _wishIn.value = _wishIn.value.replace(/\n+$/, ''); addWish(); } });
 
                     const listEl = body.querySelector('#hs-wish-list');
                     if (wishes.length === 0) {
@@ -11471,10 +11494,23 @@ const ApiHandler = {
                     };
                 });
                 const inputEl = block.querySelector('.hug-option.custom-input input');
-                inputEl.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter' && inputEl.value.trim()) {
+                // 【安卓兼容】keydown + input 双监听
+                const _doInputAction = () => {
+                    if (inputEl.value.trim()) {
                         triggerAction(actionVerb, inputEl.value.trim());
                         block.style.display = 'none';
+                    }
+                };
+                inputEl.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.isComposing) {
+                        e.preventDefault();
+                        _doInputAction();
+                    }
+                });
+                inputEl.addEventListener('input', (e) => {
+                    if (inputEl.value.endsWith('\n')) {
+                        inputEl.value = inputEl.value.replace(/\n+$/, '');
+                        _doInputAction();
                     }
                 });
             }
@@ -13718,7 +13754,10 @@ const ApiHandler = {
                         <div id="fm-suggest-area"></div>
                     `;
                     appPage.querySelector('#fm-suggest-btn').onclick = doSuggest;
-                    appPage.querySelector('#fm-suggest-input').addEventListener('keypress', e => { if (e.key === 'Enter') doSuggest(); });
+                    // 【安卓兼容】keydown + input 双监听
+                    const _fmSuggestIn = appPage.querySelector('#fm-suggest-input');
+                    _fmSuggestIn.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); doSuggest(); } });
+                    _fmSuggestIn.addEventListener('input', e => { if (_fmSuggestIn.value.endsWith('\n')) { _fmSuggestIn.value = _fmSuggestIn.value.replace(/\n+$/, ''); doSuggest(); } });
                     return;
                 }
 
