@@ -123,7 +123,8 @@
         .app-page-520.themed-520 .chat-details-page .app-content { background-color: transparent !important; }
         .app-page-520.themed-520 .chat-details-page .app-header-520 { background-color: rgba(251,249,244,0.55); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
         #conversation-page.conv-themed .app-header-520,
-        #conversation-page.conv-themed .chat-footer { background-color: rgba(251,249,244,0.3); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+        #conversation-page.conv-themed .chat-footer,
+        #conversation-page.conv-themed .select-bar { background-color: rgba(251,249,244,0.3) !important; backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important; }
         /* "我"页面各色块半透明，露出主题照片 */
         .app-page-520.themed-520 #page-me > div[style*="background:#D5EBE4"],
         .app-page-520.themed-520 #page-me > div[style*="background: #D5EBE4"] { background: rgba(213,235,228,0.55) !important; }
@@ -342,7 +343,6 @@
         .msg-checkbox { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #B89B95; background: rgba(255,255,255,0.95); flex-shrink: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.18); }
         .msg-checkbox.checked { background: #D5EBE4; border-color: #775C56; color: #775C56; font-size: 14px; font-weight: bold; line-height: 1; }
         .select-bar { position: absolute; bottom: calc(62px + env(safe-area-inset-bottom, 0px)); left: 0; right: 0; background-color: #FBF9F4; border-top: 1px solid #e8e0d0; padding: 10px 16px; display: none; align-items: center; justify-content: space-between; z-index: 30; }
-        #conversation-page.conv-themed .select-bar { background-color: rgba(251,249,244,0.3); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
         .select-bar.show { display: flex; }
         .fav-item { padding: 14px 16px; border-bottom: 1px solid #e8e0d0; cursor: pointer; }
         .fav-note-editor { display: flex; flex-direction: column; height: 100%; background: #FBF9F4; }
@@ -2353,7 +2353,7 @@ DB.init();
                 'api-settings': `
                     <div class="app-header"><span style="color:#775C56" class="cursor-pointer close-btn w-10 inline-block">‹</span><h2 class="font-bold" style="color:#775C56">API 设置</h2><span class="w-10"></span></div>
                     <div class="app-content p-5">
-                        <div class="form-group"><label>模型平台</label><select id="api-platform" class="w-full p-2 border rounded-lg"><option value="openai">OpenAI</option><option value="gemini">Gemini</option><option value="MyAPI">MyAPI</option></select></div>
+                        <div class="form-group"><label>模型平台</label><select id="api-platform" class="w-full p-2 border rounded-lg"><option value="openai">OpenAI</option><option value="gemini">Gemini</option><option value="deepseek">DeepSeek</option><option value="MyAPI">MyAPI</option></select></div>
                         <div class="form-group"><label>API 接口地址</label><input type="text" id="api-endpoint" placeholder="接口地址 (例如 https://api.openai.com/v1)"></div>
                         <div class="form-group"><label>API 密钥</label><input type="password" id="api-key" placeholder="API Key"></div>
                         <div class="form-group">
@@ -3054,29 +3054,26 @@ DB.init();
                                 try { cbg = await window.ImageDB.resolve(cbg); } catch(e) { cbg = ''; }
                             }
                             if (cbg) {
-                                // 聊天背景铺满整个对话页（顶栏+消息区+输入栏都透出壁纸）
+                                // 聊天壁纸：消息区透出壁纸；顶栏/输入栏/操作栏做成毛玻璃（半透明+模糊），柔和透出壁纸又保证可读
                                 p.style.background = `url(${cbg}) center/cover no-repeat, #FBF9F4`;
                                 p.classList.remove('conv-themed');
                                 box.style.background = 'transparent';
-                                // 顶栏和输入栏透明，让壁纸透上来
                                 const _hdr = p.querySelector('.app-header-520');
                                 const _footer = p.querySelector('.chat-footer');
                                 const _selbar = p.querySelector('#select-bar');
-                                if (_hdr) _hdr.style.background = 'transparent';
-                                if (_footer) _footer.style.background = 'transparent';
-                                if (_selbar) _selbar.style.background = 'transparent';
+                                const _frost = (el) => { if(!el) return; el.style.background = 'rgba(251,249,244,0.3)'; el.style.backdropFilter = 'blur(8px)'; el.style.webkitBackdropFilter = 'blur(8px)'; };
+                                _frost(_hdr); _frost(_footer); _frost(_selbar);
                             } else {
                                 box.style.background = 'transparent';
                             }
                         } else {
                             box.style.background = 'transparent';
-                            // 无聊天背景：恢复顶栏/输入栏默认背景（清掉之前壁纸模式留下的透明）
+                            // 无聊天壁纸：清掉壁纸模式可能残留的毛玻璃内联样式，交还给 CSS（开主题则走 conv-themed 毛玻璃，纯默认则不透明米色）
                             const _hdr = p.querySelector('.app-header-520');
                             const _footer = p.querySelector('.chat-footer');
                             const _selbar = p.querySelector('#select-bar');
-                            if (_hdr) _hdr.style.background = '';
-                            if (_footer) _footer.style.background = '';
-                            if (_selbar) _selbar.style.background = '';
+                            const _reset = (el) => { if(!el) return; el.style.background = ''; el.style.backdropFilter = ''; el.style.webkitBackdropFilter = ''; };
+                            _reset(_hdr); _reset(_footer); _reset(_selbar);
                         }
                     })();
                     const quotePreview = p.querySelector('#quote-preview');
@@ -4378,7 +4375,9 @@ DB.init();
                                     try {
                                         const loveStart = localStorage.getItem('loveStartDate');
                                         if (loveStart) {
-                                            const annDate = new Date(loveStart);
+                                            // 【时区修复】new Date("YYYY-MM-DD") 按 UTC 解析，海外负时区可能提前一天触发；用正则拆成年月日按本地时间解析
+                                            const _am = String(loveStart).match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+                                            const annDate = _am ? new Date(+_am[1], +_am[2]-1, +_am[3]) : new Date(loveStart);
                                             const todayD = new Date();
                                             if (!isNaN(annDate.getTime()) && todayD.getMonth() === annDate.getMonth() && todayD.getDate() === annDate.getDate()) {
                                                 const annYears = todayD.getFullYear() - annDate.getFullYear();
@@ -6717,7 +6716,9 @@ DB.init();
                     try {
                         const loveStart = localStorage.getItem('loveStartDate');
                         if (loveStart) {
-                            const annDate = new Date(loveStart);
+                            // 【时区修复】new Date("YYYY-MM-DD") 按 UTC 解析，海外负时区可能提前一天触发；用正则拆成年月日按本地时间解析
+                            const _am = String(loveStart).match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+                            const annDate = _am ? new Date(+_am[1], +_am[2]-1, +_am[3]) : new Date(loveStart);
                             const todayD = new Date();
                             if (!isNaN(annDate.getTime()) && todayD.getMonth() === annDate.getMonth() && todayD.getDate() === annDate.getDate()) {
                                 const annYears = todayD.getFullYear() - annDate.getFullYear();
@@ -7597,6 +7598,19 @@ DB.init();
                 endpoint.value = localStorage.getItem('apiEndpoint') || '';
                 key.value = localStorage.getItem('apiKey') || '';
                 modelCustom.value = localStorage.getItem('apiModel') || '';
+
+                // 【DeepSeek 便捷预填】用户选了 DeepSeek 时，自动填好官方端点和推荐模型
+                // 朋友不用记 api.deepseek.com 这种地址，省心。OpenAI/Gemini/MyAPI 不变
+                platform.addEventListener('change', () => {
+                    if (platform.value === 'deepseek') {
+                        if (!endpoint.value || endpoint.value === 'https://api.openai.com' || endpoint.value === '') {
+                            endpoint.value = 'https://api.deepseek.com';
+                        }
+                        if (!modelCustom.value || /^gpt-/i.test(modelCustom.value)) {
+                            modelCustom.value = 'deepseek-chat';
+                        }
+                    }
+                });
 
                 const weatherKey = appPage.querySelector('#weather-key');
                 const weatherCity = appPage.querySelector('#weather-city');
@@ -10360,10 +10374,16 @@ const ApiHandler = {
      * Fetches the list of available models from the specified API endpoint.
      */
     async fetchModels(platform, endpoint, apiKey) {
-        if (platform === 'openai' || platform === 'MyAPI') {
-            const baseUrl = (platform === 'openai') 
-                ? 'https://api.openai.com' 
-                : this.getBaseUrl(endpoint);
+        if (platform === 'openai' || platform === 'MyAPI' || platform === 'deepseek') {
+            // DeepSeek 默认走 api.deepseek.com（OpenAI 兼容格式）
+            let baseUrl;
+            if (platform === 'openai') {
+                baseUrl = 'https://api.openai.com';
+            } else if (platform === 'deepseek') {
+                baseUrl = endpoint ? this.getBaseUrl(endpoint) : 'https://api.deepseek.com';
+            } else {
+                baseUrl = this.getBaseUrl(endpoint);
+            }
             
             const url = `${baseUrl}/v1/models`;
             const headers = { 'Authorization': `Bearer ${apiKey}` };
@@ -10375,9 +10395,10 @@ const ApiHandler = {
             }
             const data = await response.json();
             // Filter for models that can be used with the chat completions endpoint
+            // DeepSeek 也用同一过滤逻辑，但因为它的模型 id 是 deepseek-xxx，过滤里加上 deepseek 关键字
             return data.data
                 .map(model => model.id)
-                .filter(id => id.includes('gpt') || id.includes('text-') || !id.includes('embed') && !id.includes('vision'))
+                .filter(id => id.includes('gpt') || id.includes('text-') || id.includes('deepseek') || !id.includes('embed') && !id.includes('vision'))
                 .sort();
         } else if (platform === 'gemini') {
             const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
@@ -10414,10 +10435,14 @@ const ApiHandler = {
             return { url, options: { method: 'POST', headers, body } };
         }
         
-        // Handles 'openai' and 'MyAPI' (OpenAI-like)
+        // Handles 'openai', 'MyAPI', 'deepseek' (all OpenAI-like)
         headers['Authorization'] = `Bearer ${apiKey}`;
         if (platform === 'openai') {
             url = 'https://api.openai.com/v1/chat/completions';
+        } else if (platform === 'deepseek') {
+            // DeepSeek 默认走官方端点，但允许用户填自定义（比如 Cloudflare AI Gateway 中转）
+            const baseUrl = endpoint ? this.getBaseUrl(endpoint) : 'https://api.deepseek.com';
+            url = `${baseUrl}/v1/chat/completions`;
         } else { // MyAPI
             const baseUrl = this.getBaseUrl(endpoint);
             url = `${baseUrl}/v1/chat/completions`;
