@@ -7535,7 +7535,33 @@ DB.init();
                 if (weather.feelsLike !== weather.temp) s += `（体感 ${weather.feelsLike}°C）`;
                 if (weather.tempMin !== weather.tempMax) s += `，今日 ${weather.tempMin}~${weather.tempMax}°C`;
                 if (weather.humidity) s += `，湿度 ${weather.humidity}%`;
-                s += `。你知道用户那边的天气，可以在合适的时候自然地关心 TA（比如降温提醒添衣、下雨提醒带伞、天热提醒防暑等），但不要每句话都提天气，要自然，不要刻意。\n`;
+                s += `。\n`;
+
+                // 【天气主动关心增强】判断是否属于"值得在意"的天气
+                // 触发条件：下雨/雪、降温（<=10°C 或体感<温度4°以上）、高温（>=30°C）、温差大（>=12°C）、大风等
+                const desc = String(weather.desc || '');
+                const isRainSnow = /雨|雪|雷|暴|霾|雾/.test(desc);
+                const isCold = (typeof weather.temp === 'number' && weather.temp <= 10);
+                const isHot = (typeof weather.temp === 'number' && weather.temp >= 30);
+                const isWindChill = (typeof weather.feelsLike === 'number' && typeof weather.temp === 'number' && (weather.temp - weather.feelsLike) >= 4);
+                const isBigGap = (typeof weather.tempMin === 'number' && typeof weather.tempMax === 'number' && (weather.tempMax - weather.tempMin) >= 12);
+                const isWindy = /风|大风|台风|龙卷/.test(desc);
+                const isNotable = isRainSnow || isCold || isHot || isWindChill || isBigGap || isWindy;
+
+                if (isNotable) {
+                    // 值得在意的天气：明确鼓励主动关心
+                    const reasons = [];
+                    if (isRainSnow) reasons.push('在下雨/雪');
+                    if (isCold) reasons.push('气温偏低');
+                    if (isHot) reasons.push('气温偏高');
+                    if (isWindChill) reasons.push('体感比实际温度还冷不少');
+                    if (isBigGap) reasons.push('今天温差大');
+                    if (isWindy) reasons.push('风比较大');
+                    s += `【天气关心·主动】今天用户那边${reasons.join('、')}，这是值得你主动关心 TA 的天气。请在合适的时机（比如打招呼时、聊到外出/穿衣/睡眠/通勤时）自然地提一句关心——降温叮嘱添衣、下雨提醒带伞或注意路滑、天热提醒防暑多喝水、温差大提醒早晚加件外套、大风提醒小心着凉等等。语气要像真心在乎，不要像播报，也不要每条消息都念叨——一次自然的关心就够了。\n`;
+                } else {
+                    // 平稳天气：只在合适场景带一句，别唠叨
+                    s += `【天气关心·克制】今天用户那边天气平稳，不需要主动反复提天气。只在用户打招呼、聊到出门/穿衣/通勤等场景时，可以自然地带一句（比如"今天天气不错适合出门""穿这身刚好"），但不要反复唠叨、也不要每条消息都提。\n`;
+                }
                 return s;
             }
 
@@ -10387,11 +10413,24 @@ const ApiHandler = {
      * Parses the chat response from different platforms.
      */
     parseChatResponse(platform, data) {
+        let raw;
         if (platform === 'gemini') {
-            return data.candidates?.[0]?.content?.parts?.[0]?.text;
+            raw = data.candidates?.[0]?.content?.parts?.[0]?.text;
         } else { // Handles 'openai' and 'MyAPI'
-            return data.choices?.[0]?.message?.content;
+            raw = data.choices?.[0]?.message?.content;
         }
+        // 【标点清理】AI 偶尔会画蛇添足把句子写成"是不是？。"（问号/叹号后多一个句号）
+        // 在所有 parseChatResponse 调用方接收到回复前，统一清掉这种多余的句号（中英文标点都覆盖）
+        if (typeof raw === 'string') {
+            // 处理中文问号/叹号后多余的句号（包括连续多个）
+            raw = raw.replace(/([？！])。+/g, '$1');
+            // 处理英文 ?/! 后多余的英文句号（包括连续多个）
+            raw = raw.replace(/([?!])\.+/g, '$1');
+            // 处理混合情况：中文问号/叹号后跟英文句号、或英文?!后跟中文句号
+            raw = raw.replace(/([？！])\.+/g, '$1');
+            raw = raw.replace(/([?!])。+/g, '$1');
+        }
+        return raw;
     }
 };
 
