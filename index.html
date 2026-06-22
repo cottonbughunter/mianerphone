@@ -46,7 +46,7 @@
             width: 100%;
             height: 100%;
             box-sizing: border-box;
-            padding: calc(40px + env(safe-area-inset-top, 0px)) 14px 0;
+            padding: max(55px, calc(env(safe-area-inset-top, 40px) + 15px)) 14px 0;
             transform: translateX(100%);
             transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
             z-index: 1;
@@ -95,17 +95,17 @@
         .app-page.closing { animation: close-app 0.4s cubic-bezier(0.8, 0, 0.2, 1) forwards; }
         @keyframes open-app { from { opacity: 0; transform: scale(0.1); border-radius: 44px; } to { opacity: 1; transform: scale(1); border-radius: 0; } }
         @keyframes close-app { from { opacity: 1; transform: scale(1); border-radius: 0; } to { opacity: 0; transform: scale(0.1); border-radius: 44px; } }
-        .app-header { background-color: #FBF9F4; border-bottom: 1.5px solid #e8e0d0; padding: calc(32px + env(safe-area-inset-top, 0px)) 15px 10px; display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 100; box-sizing: border-box; flex-shrink: 0; }
+        .app-header { background-color: #FBF9F4; border-bottom: 1.5px solid #e8e0d0; padding: max(32px, env(safe-area-inset-top, 32px)) 15px 10px; display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 100; box-sizing: border-box; flex-shrink: 0; }
         .app-header .close-btn, .app-header #back-to-contacts { font-size: 22px !important; color: #775C56 !important; padding: 0; width: 40px !important; text-align: left; cursor: pointer; line-height: 1 !important; box-sizing: border-box; margin-top: 10px; }
         .app-header h2 { font-size: 17px !important; font-weight: 600 !important; color: #775C56 !important; position: absolute; left: 50%; bottom: 9px; transform: translateX(-50%); margin: 0 !important; line-height: 1 !important; padding: 0 !important; }
         /* 520 header也一样 */
-        .app-header-520 { padding: calc(32px + env(safe-area-inset-top, 0px)) 15px 10px !important; }
+        .app-header-520 { padding: max(32px, env(safe-area-inset-top, 32px)) 15px 10px !important; }
         .app-header-520 .close-btn-520, .app-header-520 .add-btn-520 { padding: 0 !important; line-height: 1 !important; margin-top: 10px; }
         .app-header-520 .title { left: 50% !important; bottom: 9px !important; top: auto !important; transform: translateX(-50%) !important; line-height: 1 !important; margin: 0 !important; }
         .app-content { flex-grow: 1; overflow-y: auto; color: #775C56; }
 
         /* --- 520 App 基础框架 --- */
-        .app-header-520 { background-color: #FBF9F4; border-bottom: 1.5px solid #e8e0d0; padding: calc(26px + env(safe-area-inset-top, 0px)) 15px 8px; display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 100; box-sizing: border-box;}
+        .app-header-520 { background-color: #FBF9F4; border-bottom: 1.5px solid #e8e0d0; padding: max(26px, env(safe-area-inset-top, 26px)) 15px 8px; display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 100; box-sizing: border-box;}
         .app-header-520 .title { font-size: 17px; font-weight: 600; color: #775C56; position: absolute; left: 50%; top: 50%; transform: translateX(-50%); }
         .app-header-520 .close-btn-520, .app-header-520 .add-btn-520 { padding: 4px; font-size: 22px; cursor: pointer; color: #775C56; width: 40px; }
         .app-header-520 .close-btn-520 { text-align: left; }
@@ -381,7 +381,7 @@
         .moment-likes { background: #f7f7f7; padding: 5px 8px; border-radius: 4px; margin-top: 5px; font-size: 13px; color: #775C56; }
 
         /* --- "我" 的界面样式 --- */
-        .me-header { background: #FBF9F4; color: #775C56; padding: calc(28px + env(safe-area-inset-top, 0px)) 20px 10px; display: flex; align-items: center; gap: 15px; }
+        .me-header { background: #FBF9F4; color: #775C56; padding: max(28px, env(safe-area-inset-top, 28px)) 20px 10px; display: flex; align-items: center; gap: 15px; }
         .me-avatar { width: 64px; height: 64px; border-radius: 16px; background-size: cover; background-position: center; border: none; background-color: #F2EDE4; cursor: pointer; overflow: hidden; display: flex; justify-content: center; align-items: center; font-size: 24px; color: #ccc;}
         .me-info { flex: 1; min-width: 0; }
         .me-info input { border: none; font-size: 18px; font-weight: bold; width: 100%; background: transparent; color: #775C56; }
@@ -786,7 +786,7 @@ DB.init();
                 </div>
             </div>
             <!-- 第一页：还原宝宝旧版的结构 -->
-            <div class="content-wrapper home-page-1" id="home-page-1" style="padding-top: calc(25% + env(safe-area-inset-top, 0px));">
+            <div class="content-wrapper home-page-1" id="home-page-1" style="padding-top: max(25%, env(safe-area-inset-top, 25%));">
                 <div class="time-and-date"><div id="time" class="time"></div><div id="date" class="date"></div></div>
                 <div class="home-content">
                     <div class="app-grid">
@@ -1689,7 +1689,7 @@ DB.init();
                 </div>`;
             }).join('');
             ov.innerHTML = `
-                <div style="display:flex;align-items:center;padding:calc(50px + env(safe-area-inset-top, 0px)) 16px 12px;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,0.12);">
+                <div style="display:flex;align-items:center;padding:max(50px, env(safe-area-inset-top, 50px)) 16px 12px;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,0.12);">
                     <span id="call-detail-back" style="font-size:28px;cursor:pointer;color:white;width:40px;">‹</span>
                     <div style="flex:1;text-align:center;font-size:16px;font-weight:600;">通话详情</div>
                     <span style="width:40px;"></span>
@@ -6608,7 +6608,7 @@ DB.init();
                 
                 appPage.innerHTML = `
                     <div style="position:absolute;inset:0;background:#FBF9F4;display:flex;flex-direction:column;border-radius:30px;overflow:hidden;">
-                        <div style="padding:calc(22px + env(safe-area-inset-top, 0px)) 15px 10px;display:flex;align-items:center;background:#FBF9F4;border-bottom:1.5px solid #e8e0d0;position:relative;">
+                        <div style="padding:max(22px, env(safe-area-inset-top, 22px)) 15px 10px;display:flex;align-items:center;background:#FBF9F4;border-bottom:1.5px solid #e8e0d0;position:relative;">
                             <span id="aiapp-back" style="font-size:28px;cursor:pointer;color:#775C56;line-height:1;margin-top:8px;width:40px;flex-shrink:0;">‹</span>
                             <div style="position:absolute;left:50%;bottom:9px;transform:translateX(-50%);font-size:17px;font-weight:600;color:#775C56;">${config.title}</div>
                             <div style="margin-left:auto;display:flex;gap:6px;margin-top:6px;">
@@ -6811,7 +6811,7 @@ DB.init();
                 
                 appPage.innerHTML = `
                     <div style="position:absolute;inset:0;background:#FBF9F4;display:flex;flex-direction:column;border-radius:30px;overflow:hidden;">
-                        <div style="padding:calc(22px + env(safe-area-inset-top, 0px)) 15px 10px;display:flex;align-items:center;background:#FBF9F4;border-bottom:1.5px solid #e8e0d0;position:relative;">
+                        <div style="padding:max(22px, env(safe-area-inset-top, 22px)) 15px 10px;display:flex;align-items:center;background:#FBF9F4;border-bottom:1.5px solid #e8e0d0;position:relative;">
                             <span id="ai520-back" style="font-size:28px;cursor:pointer;color:#775C56;line-height:1;margin-top:8px;width:40px;">‹</span>
                             <div style="position:absolute;left:50%;bottom:9px;transform:translateX(-50%);font-size:17px;font-weight:600;color:#775C56;">${c.notes || c.name} 的 520</div>
                         </div>
@@ -6855,7 +6855,7 @@ DB.init();
                 
                 appPage.innerHTML = `
                     <div style="position:absolute;inset:0;background:#FBF9F4;display:flex;flex-direction:column;border-radius:30px;overflow:hidden;">
-                        <div style="padding:calc(22px + env(safe-area-inset-top, 0px)) 15px 10px;display:flex;align-items:center;background:#FBF9F4;border-bottom:1.5px solid #e8e0d0;position:relative;">
+                        <div style="padding:max(22px, env(safe-area-inset-top, 22px)) 15px 10px;display:flex;align-items:center;background:#FBF9F4;border-bottom:1.5px solid #e8e0d0;position:relative;">
                             <span id="ai520-chat-back" style="font-size:28px;cursor:pointer;color:#775C56;line-height:1;margin-top:8px;width:40px;">‹</span>
                             <div style="position:absolute;left:50%;bottom:9px;transform:translateX(-50%);font-size:17px;font-weight:600;color:#775C56;">${userNick}</div>
                         </div>
@@ -6935,7 +6935,7 @@ DB.init();
                     const msgHtml = renderVirtualMessages(currentMsgs, c, vConfig.name, vConfig.emoji);
                     appPage.innerHTML = `
                         <div style="position:absolute;inset:0;background:#FBF9F4;display:flex;flex-direction:column;border-radius:30px;overflow:hidden;">
-                            <div style="padding:calc(22px + env(safe-area-inset-top, 0px)) 15px 10px;display:flex;align-items:center;background:#FBF9F4;border-bottom:1.5px solid #e8e0d0;position:relative;">
+                            <div style="padding:max(22px, env(safe-area-inset-top, 22px)) 15px 10px;display:flex;align-items:center;background:#FBF9F4;border-bottom:1.5px solid #e8e0d0;position:relative;">
                                 <span id="vchat-back" style="font-size:28px;cursor:pointer;color:#775C56;line-height:1;margin-top:8px;width:40px;">‹</span>
                                 <div style="position:absolute;left:50%;bottom:9px;transform:translateX(-50%);font-size:17px;font-weight:600;color:#775C56;">${vConfig.name}</div>
                                 <span id="vchat-regen" style="margin-top:8px;margin-left:auto;font-size:18px;cursor:pointer;width:40px;text-align:right;" title="重新生成对话">🔄</span>
@@ -7104,7 +7104,7 @@ DB.init();
                 
                 appPage.innerHTML = `
                     <div style="position:absolute;inset:0;background:#FBF9F4;display:flex;flex-direction:column;border-radius:30px;overflow:hidden;">
-                        <div style="padding:calc(22px + env(safe-area-inset-top, 0px)) 15px 10px;display:flex;align-items:center;background:#FBF9F4;border-bottom:1.5px solid #e8e0d0;position:relative;">
+                        <div style="padding:max(22px, env(safe-area-inset-top, 22px)) 15px 10px;display:flex;align-items:center;background:#FBF9F4;border-bottom:1.5px solid #e8e0d0;position:relative;">
                             <span id="aiphone-back" style="font-size:28px;cursor:pointer;color:#775C56;line-height:1;margin-top:8px;width:40px;">‹</span>
                             <div style="position:absolute;left:50%;bottom:9px;transform:translateX(-50%);font-size:17px;font-weight:600;color:#775C56;">通话记录</div>
                         </div>
@@ -7140,7 +7140,7 @@ DB.init();
                 
                 appPage.innerHTML = `
                     <div style="position:absolute;inset:0;background:#FBF9F4;display:flex;flex-direction:column;border-radius:30px;overflow:hidden;">
-                        <div style="padding:calc(22px + env(safe-area-inset-top, 0px)) 15px 10px;display:flex;align-items:center;background:#FBF9F4;border-bottom:1.5px solid #e8e0d0;position:relative;">
+                        <div style="padding:max(22px, env(safe-area-inset-top, 22px)) 15px 10px;display:flex;align-items:center;background:#FBF9F4;border-bottom:1.5px solid #e8e0d0;position:relative;">
                             <span id="aialbum-back" style="font-size:28px;cursor:pointer;color:#775C56;line-height:1;margin-top:8px;width:40px;flex-shrink:0;">‹</span>
                             <div style="position:absolute;left:50%;bottom:9px;transform:translateX(-50%);font-size:17px;font-weight:600;color:#775C56;">相册</div>
                             <div style="margin-left:auto;display:flex;gap:6px;margin-top:6px;">
@@ -7880,7 +7880,7 @@ DB.init();
                 const layer = document.createElement('div');
                 layer.style.cssText = 'position:absolute;inset:0;background:#FBF9F4;z-index:200;display:flex;flex-direction:column;border-radius:30px;overflow:hidden;';
                 layer.innerHTML = `
-                    <div style="padding:calc(22px + env(safe-area-inset-top, 0px)) 15px 10px;display:flex;align-items:center;background:#FBF9F4;border-bottom:1.5px solid #e8e0d0;position:relative;flex-shrink:0;">
+                    <div style="padding:max(22px, env(safe-area-inset-top, 22px)) 15px 10px;display:flex;align-items:center;background:#FBF9F4;border-bottom:1.5px solid #e8e0d0;position:relative;flex-shrink:0;">
                         <span class="hs-layer-back" style="font-size:28px;cursor:pointer;color:#775C56;line-height:1;margin-top:8px;width:40px;">‹</span>
                         <div style="position:absolute;left:50%;bottom:9px;transform:translateX(-50%);font-size:17px;font-weight:600;color:#775C56;">${title}</div>
                     </div>
@@ -10534,7 +10534,7 @@ const ApiHandler = {
                 .lullaby-stars { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
                 .lullaby-star { position: absolute; background: white; border-radius: 50%; opacity: 0.6; animation: lullaby-twinkle 3s infinite alternate; }
                 @keyframes lullaby-twinkle { 0%{opacity:0.3;} 100%{opacity:0.9;} }
-                .lullaby-header { position: relative; padding: 32px 16px 16px; display: flex; align-items: center; justify-content: space-between; z-index: 1; }
+                .lullaby-header { position: relative; padding: max(32px, env(safe-area-inset-top, 32px)) 16px 16px; display: flex; align-items: center; justify-content: space-between; z-index: 1; }
                 .lullaby-back { font-size: 28px; cursor: pointer; color: #f0e6ff; width: 30px; }
                 .lullaby-title { font-size: 18px; font-weight: 500; letter-spacing: 2px; }
                 .lullaby-body { padding: 8px 22px 16px; position: relative; z-index: 1; }
@@ -10889,7 +10889,7 @@ const ApiHandler = {
             <style>
                 .club-page { background: ${themeBg}; min-height: 100%; color: #4a3838; padding-bottom: 80px; overflow-y: auto; -webkit-overflow-scrolling: touch; height: 100%; scrollbar-width: none; }
                 .club-page::-webkit-scrollbar { display: none; }
-                .club-header { position: sticky; top: 0; background: ${themeBg}; padding: calc(32px + env(safe-area-inset-top, 0px)) 16px 12px; z-index: 5; border-bottom: 1px solid rgba(0,0,0,0.04); }
+                .club-header { position: sticky; top: 0; background: ${themeBg}; padding: max(32px, env(safe-area-inset-top, 32px)) 16px 12px; z-index: 5; border-bottom: 1px solid rgba(0,0,0,0.04); }
                 .club-top-row { display: flex; align-items: center; justify-content: space-between; }
                 .club-back { font-size: 26px; cursor: pointer; color: ${themeColor}; width: 30px; }
                 .club-title { font-size: 17px; font-weight: 600; color: ${themeColor}; }
@@ -11199,7 +11199,7 @@ const ApiHandler = {
             <style>
                 .hug-page { background: linear-gradient(180deg, #FFF0F1 0%, #FFE3E4 50%, #FFD3D4 100%); min-height: 100%; color: #9E5F62; padding-bottom: 20px; overflow-y: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
                 .hug-page::-webkit-scrollbar { display: none; }
-                .hug-header { padding: 32px 16px 10px; display: flex; align-items: center; justify-content: space-between; }
+                .hug-header { padding: max(32px, env(safe-area-inset-top, 32px)) 16px 10px; display: flex; align-items: center; justify-content: space-between; }
                 .hug-back { font-size: 26px; cursor: pointer; color: #F0989B; width: 30px; }
                 .hug-title { font-size: 17px; font-weight: 600; color: #F0989B; }
                 /* 娃柜 */
@@ -11672,7 +11672,7 @@ const ApiHandler = {
             <style>
                 .bc-page { background: linear-gradient(180deg, #f5edff 0%, #ebdcff 50%, #ddc8f5 100%); min-height: 100%; color: #4a3370; padding-bottom: 30px; overflow-y: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; height: 100%; }
                 .bc-page::-webkit-scrollbar { display: none; }
-                .bc-header { padding: 32px 16px 10px; display: flex; align-items: center; justify-content: space-between; }
+                .bc-header { padding: max(32px, env(safe-area-inset-top, 32px)) 16px 10px; display: flex; align-items: center; justify-content: space-between; }
                 .bc-back { font-size: 26px; cursor: pointer; color: #8a6dc9; width: 30px; }
                 .bc-title { font-size: 17px; font-weight: 600; color: #8a6dc9; }
                 .bc-sub { font-size: 11px; color: #9c87b8; text-align: center; opacity: 0.7; margin-bottom: 12px; }
@@ -13744,7 +13744,7 @@ const ApiHandler = {
             <style>
                 .fm-page { background: linear-gradient(180deg, #FFFCF6 0%, #FDF8EF 100%); min-height: 100%; color: #7a6a3a; padding-bottom: 30px; overflow-y: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; height: 100%; }
                 .fm-page::-webkit-scrollbar { display: none; }
-                .fm-header { padding: 32px 16px 10px; display: flex; align-items: center; justify-content: space-between; }
+                .fm-header { padding: max(32px, env(safe-area-inset-top, 32px)) 16px 10px; display: flex; align-items: center; justify-content: space-between; }
                 .fm-back { font-size: 26px; cursor: pointer; color: #B89B72; width: 30px; }
                 .fm-title { font-size: 17px; font-weight: 600; color: #B89B72; }
                 .fm-sub { font-size: 11px; color: #C4B299; text-align: center; opacity: 0.7; margin-bottom: 12px; }
