@@ -10400,9 +10400,21 @@ const ApiHandler = {
      * @returns {string} The base URL.
      */
     getBaseUrl(endpoint) {
-        let url = endpoint.replace(/\/$/, ''); // Remove trailing slash
+        let url = (endpoint || '').trim().replace(/\/$/, ''); // 去前后空格+末尾斜杠
+        if (!url) return url;
+        // 【容错·协议修正】没写协议或写了 http:// 都自动改成 https://
+        // OpenAI/DeepSeek 等几乎所有现代 API 都强制 HTTPS，且浏览器在 https 页面会拦截 http 请求
+        if (url.startsWith('http://')) {
+            url = 'https://' + url.slice(7);
+        } else if (!url.startsWith('https://')) {
+            url = 'https://' + url;
+        }
+        // 去除常见的尾部后缀，提取出 base URL
         if (url.endsWith('/v1/chat/completions')) {
             return url.replace('/v1/chat/completions', '');
+        }
+        if (url.endsWith('/chat/completions')) {
+            return url.replace('/chat/completions', '');
         }
         if (url.endsWith('/v1')) {
             return url.replace('/v1', '');
@@ -10415,10 +10427,13 @@ const ApiHandler = {
      */
     async fetchModels(platform, endpoint, apiKey) {
         if (platform === 'openai' || platform === 'MyAPI' || platform === 'deepseek') {
-            // DeepSeek 默认走 api.deepseek.com（OpenAI 兼容格式）
+            // 三个平台都是 OpenAI 兼容格式，统一处理 baseUrl：
+            // - openai: 用户填了 endpoint 就用用户的（支持代理/Azure/中转），否则用官方
+            // - deepseek: 同上，默认 api.deepseek.com
+            // - MyAPI: 必须用户填 endpoint
             let baseUrl;
             if (platform === 'openai') {
-                baseUrl = 'https://api.openai.com';
+                baseUrl = endpoint ? this.getBaseUrl(endpoint) : 'https://api.openai.com';
             } else if (platform === 'deepseek') {
                 baseUrl = endpoint ? this.getBaseUrl(endpoint) : 'https://api.deepseek.com';
             } else {
@@ -10427,7 +10442,13 @@ const ApiHandler = {
             
             const url = `${baseUrl}/v1/models`;
             const headers = { 'Authorization': `Bearer ${apiKey}` };
-            const response = await fetch(url, { headers });
+            let response;
+            try {
+                response = await fetch(url, { headers });
+            } catch (netErr) {
+                // 【网络错误友好提示】fetch 失败通常是网络/CORS/协议问题，不是 API 本身的问题
+                throw new Error(`无法连接到 ${baseUrl}：${netErr.message}。请检查：1) 网络是否能访问该地址；2) OpenAI 官方接口在国内需要代理；3) 接口地址协议是否正确（应为 https://）`);
+            }
 
             if (!response.ok) {
                 const err = await response.json().catch(() => ({}));
@@ -10478,7 +10499,9 @@ const ApiHandler = {
         // Handles 'openai', 'MyAPI', 'deepseek' (all OpenAI-like)
         headers['Authorization'] = `Bearer ${apiKey}`;
         if (platform === 'openai') {
-            url = 'https://api.openai.com/v1/chat/completions';
+            // OpenAI 用户填了 endpoint 就用用户的（支持代理/Azure/中转），否则用官方
+            const baseUrl = endpoint ? this.getBaseUrl(endpoint) : 'https://api.openai.com';
+            url = `${baseUrl}/v1/chat/completions`;
         } else if (platform === 'deepseek') {
             // DeepSeek 默认走官方端点，但允许用户填自定义（比如 Cloudflare AI Gateway 中转）
             const baseUrl = endpoint ? this.getBaseUrl(endpoint) : 'https://api.deepseek.com';
