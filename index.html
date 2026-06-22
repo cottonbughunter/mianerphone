@@ -8824,6 +8824,26 @@ DB.init();
                     return { statusShort: `还有 ${daysToNext} 天`, hint: `周期 ${cycleLen} 天 · 平稳期` };
                 }
             }
+
+            // 工具：经期预测——基于上次开始日和周期长度，推算下次经期、排卵日（均为估算，仅供参考）
+            function hsGetPeriodPrediction(period) {
+                if (!period || !period.lastStart) return null;
+                const cycleLen = period.cycleLen || 28;
+                const last = new Date(period.lastStart); last.setHours(0,0,0,0);
+                const today = new Date(); today.setHours(0,0,0,0);
+                if (isNaN(last.getTime())) return null;
+                // 下次预计 = 上次开始日 + 一个周期；若已逾期则继续按周期累加到今天之后
+                let next = new Date(last.getTime() + cycleLen * 86400000); let guard = 0;
+                while (next < today && guard < 120) { next = new Date(next.getTime() + cycleLen * 86400000); guard++; }
+                const ovu = new Date(next.getTime() - 14 * 86400000);        // 排卵日 ≈ 下次经期前 14 天
+                const fmt = (d) => (d.getMonth() + 1) + '月' + d.getDate() + '日';
+                const dDiff = (d) => Math.round((d - today) / 86400000);
+                return {
+                    cycleLen,
+                    nextStartStr: fmt(next), nextIn: dDiff(next),
+                    ovuStr: fmt(ovu), ovuIn: dDiff(ovu)
+                };
+            }
             
             // ===== 共同打卡 =====
             function hsOpenHabits(appPage, c, userNick) {
@@ -9024,6 +9044,26 @@ DB.init();
                             <div style="font-size:24px;color:#E89B9B;font-weight:600;margin-bottom:6px;">${info.statusShort}</div>
                             <div style="font-size:12px;color:#9A7872;line-height:1.6;padding:0 10px;">${info.hint}</div>
                         </div>
+
+                        ${(() => {
+                            const pred = hsGetPeriodPrediction(period);
+                            if (!pred) return '';
+                            const nextTail = pred.nextIn > 0 ? `（还有 ${pred.nextIn} 天）` : (pred.nextIn === 0 ? '（就在今天）' : '');
+                            const ovuTail = pred.ovuIn > 0 ? `（还有 ${pred.ovuIn} 天）` : (pred.ovuIn === 0 ? '（就在今天）' : '（已过）');
+                            return `
+                        <div style="background:#fff;border-radius:14px;padding:14px;margin-bottom:14px;border:1px solid #f0e0dc;">
+                            <div style="font-size:12px;color:#9A7872;margin-bottom:10px;font-weight:500;">🔮 经期预测</div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;">
+                                <span style="font-size:13px;color:#775C56;">下次预计</span>
+                                <span style="font-size:13px;color:#E89B9B;font-weight:600;">${pred.nextStartStr}${nextTail}</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;">
+                                <span style="font-size:13px;color:#775C56;">预计排卵日</span>
+                                <span style="font-size:13px;color:#C98AB5;font-weight:600;">${pred.ovuStr}${ovuTail}</span>
+                            </div>
+                            <div style="font-size:10px;color:#B89B95;line-height:1.5;margin-top:8px;">预测基于平均周期估算，仅供参考，身体的实际节奏可能有出入哦</div>
+                        </div>`;
+                        })()}
                         
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
                             ${!inPeriod ? `<span id="hs-period-start" style="padding:12px;background:#FFD3D4;color:#775C56;border-radius:12px;font-size:13px;cursor:pointer;text-align:center;font-weight:500;">🌸 今天来了</span>` : `<span id="hs-period-end" style="padding:12px;background:#D5EBE4;color:#775C56;border-radius:12px;font-size:13px;cursor:pointer;text-align:center;font-weight:500;">🌿 今天结束</span>`}
