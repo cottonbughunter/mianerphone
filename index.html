@@ -18,9 +18,9 @@
     <script src="https://unpkg.com/dexie@3.2.4/dist/dexie.js"></script>
     <style>
         /* --- 核心基础 --- */
-        html { background: linear-gradient(180deg, #fff5f7 0%, #ffeaf0 100%); height: 100%; min-height: -webkit-fill-available; }
-        html { background: #ffeaf0; } /* 底部safe area填充色 */
-        body { display: flex; justify-content: center; align-items: center; height: 100vh; height: 100dvh; min-height: -webkit-fill-available; background: linear-gradient(180deg, #fff5f7 0%, #ffeaf0 100%); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; overflow: hidden; user-select: none; padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0; background-color: #ffeaf0;}
+        html { background: linear-gradient(180deg, #f0f5fa 0%, #e2ebf5 100%); height: 100%; min-height: -webkit-fill-available; }
+        html { background: #e2ebf5; } /* 底部safe area填充色 */
+        body { display: flex; justify-content: center; align-items: center; height: 100vh; height: 100dvh; min-height: -webkit-fill-available; background: linear-gradient(180deg, #f0f5fa 0%, #e2ebf5 100%); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; overflow: hidden; user-select: none; padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0; background-color: #e2ebf5;}
         .mobile-container { width: 330px; height: 620px; background-color: #FBF9F4; border-radius: 40px; box-shadow: 0 10px 30px rgba(255, 182, 193, 0.3); position: relative; overflow: hidden; transform: scale(0.95); border: 10px solid #000000; }
         .screen { width: 100%; height: 100%; border-radius: 30px; background-color: transparent; background-size: cover; background-position: center; position: relative; display: flex; flex-direction: column; padding-bottom: 0; box-sizing: border-box; overflow: hidden; }
         .backdrop-blur { -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
@@ -497,7 +497,7 @@
 
         @media (display-mode: standalone) {
             html, body {
-                background: linear-gradient(180deg, #fff5f7 0%, #ffeaf0 100%);
+                background: linear-gradient(180deg, #f0f5fa 0%, #e2ebf5 100%);
             }
             html {
                 height: 100%;
@@ -506,7 +506,7 @@
                 padding: 0 !important;
                 margin: 0 !important;
                 display: block !important;
-                background: #ffeaf0 !important;
+                background: #e2ebf5 !important;
                 min-height: 0 !important;
             }
             .mobile-container {
@@ -2184,7 +2184,7 @@ DB.init();
                 const sc = document.querySelector('.screen');
                 const hc = document.querySelector('.home-content');
                 mc.style.cssText = 'position:absolute !important;top:0 !important;left:0 !important;width:100vw !important;height:100vh !important;max-width:none !important;border-radius:0 !important;border:none !important;box-shadow:none !important;transform:none !important;z-index:9999 !important;';
-                document.documentElement.style.cssText = 'background:linear-gradient(180deg,#fff5f7 0%,#ffeaf0 100%) !important;';
+                document.documentElement.style.cssText = 'background:linear-gradient(180deg,#f0f5fa 0%,#e2ebf5 100%) !important;';
                 document.body.style.cssText = 'padding:0 !important;margin:0 !important;background:transparent !important;';
                 if (sc) {
                     sc.style.borderRadius = '0';
@@ -5789,7 +5789,7 @@ DB.init();
                 
                 appPage.innerHTML = `
                     <div style="position:absolute;top:0;left:0;right:0;bottom:0;z-index:2;display:flex;flex-direction:column;pointer-events:none;">
-                        <div style="display:flex;align-items:flex-end;padding:32px 15px 10px;flex-shrink:0;position:relative;pointer-events:auto;">
+                        <div style="display:flex;align-items:flex-end;padding:max(32px, env(safe-area-inset-top, 32px)) 15px 10px;flex-shrink:0;position:relative;pointer-events:auto;">
                             <span id="cp-back" style="font-size:22px;cursor:pointer;color:${phoneData.textBrown ? '#775C56' : '#fff'};line-height:1;text-shadow:${phoneData.textBrown ? '0 1px 2px rgba(255,255,255,0.4)' : '0 1px 4px rgba(0,0,0,0.5)'};width:40px;">‹</span>
                             <div style="position:absolute;left:50%;bottom:11px;transform:translateX(-50%);font-size:17px;color:${phoneData.textBrown ? '#775C56' : '#fff'};font-weight:600;text-shadow:${phoneData.textBrown ? '0 1px 2px rgba(255,255,255,0.4)' : '0 1px 3px rgba(0,0,0,0.4)'};line-height:1;">${c.notes || c.name} 的手机</div>
                         </div>
@@ -10269,7 +10269,7 @@ DB.init();
                                 const wallpaperBg = screenEl.style.backgroundImage;
                                 const wallpaperCss = wallpaperBg
                                     ? `background-image:${wallpaperBg} !important;background-size:cover !important;background-position:center !important;`
-                                    : 'background:linear-gradient(180deg,#fff5f7 0%,#ffeaf0 100%) !important;';
+                                    : 'background:linear-gradient(180deg,#f0f5fa 0%,#e2ebf5 100%) !important;';
                                 // mobile-container 用 100vw 100vh 全屏（手机上原本就是 100vw）
                                 mobileContainer.style.cssText = 'position:absolute !important;top:0 !important;left:0 !important;width:100vw !important;height:100vh !important;max-width:none !important;border-radius:0 !important;border:none !important;box-shadow:none !important;transform:none !important;z-index:9999 !important;';
                                 // 圆角区域也铺壁纸，不透出白色
