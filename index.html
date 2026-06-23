@@ -541,6 +541,21 @@
     </style>
     <script>
 // ============================================
+// 全局错误捕获：避免某个未处理异常让 Safari 进入"重复出现问题"死循环
+// 任何报错都只是 console 警告，不让浏览器把它当成"页面致命错误"反复重启 tab
+// ============================================
+window.addEventListener('error', function(e) {
+    console.warn('[眠尔机·全局error]', e.message || e);
+    // 不调用 preventDefault()，让正常错误日志保留；只是确保事件被 listener 接住
+});
+window.addEventListener('unhandledrejection', function(e) {
+    console.warn('[眠尔机·未捕获Promise]', (e.reason && (e.reason.message || e.reason)) || e);
+    // 同上
+});
+</script>
+
+<script>
+// ============================================
 // 4o 默认系统提示词（来自泄露版 chatgpt4o_20250324 + 语言匹配补充）
 // 这是新建联系人时自动套用的默认人设，让对话拥有 4o 的味道
 // ============================================
@@ -4054,7 +4069,34 @@ DB.init();
                         renderScheduled = true;
                         requestAnimationFrame(() => {
                             renderScheduled = false;
-                            _renderImpl();
+                            try {
+                                _renderImpl();
+                            } catch (err) {
+                                // 【兜底保险】渲染失败时不让浏览器陷入"页面反复重启"死循环
+                                // 显示友好错误界面 + 提供"清空该联系人聊天记录"的紧急自救按钮
+                                console.error('[眠尔机] 渲染聊天失败:', err);
+                                try {
+                                    box.innerHTML = `<div style="padding:40px 20px;text-align:center;color:#775C56;font-size:14px;line-height:1.8;">
+                                        <div style="font-size:32px;margin-bottom:12px;">😢</div>
+                                        <div style="font-weight:600;margin-bottom:8px;">这个聊天暂时打不开了</div>
+                                        <div style="color:#9A7872;font-size:12px;margin-bottom:18px;">可能是聊天记录里有损坏的数据</div>
+                                        <div style="font-size:11px;color:#B89B95;margin-bottom:14px;word-break:break-all;">${String(err && err.message || err).slice(0, 120)}</div>
+                                        <button id="emergency-clear-chat" style="padding:10px 20px;background:#FFD3D4;border:none;border-radius:8px;font-size:13px;cursor:pointer;color:#775C56;font-weight:600;">清空这个聊天记录</button>
+                                    </div>`;
+                                    const emergencyBtn = box.querySelector('#emergency-clear-chat');
+                                    if (emergencyBtn) emergencyBtn.onclick = () => {
+                                        if (confirm('确定清空和「' + (c.notes||c.name) + '」的聊天记录吗？联系人本身不会删除~')) {
+                                            try {
+                                                const chats = DB.getChats();
+                                                chats[id] = [];
+                                                DB.saveChats(chats);
+                                                alert('清空完成');
+                                                location.reload();
+                                            } catch(e) { alert('清空失败：' + e.message); }
+                                        }
+                                    };
+                                } catch(_) {}
+                            }
                         });
                     };
                     render();
