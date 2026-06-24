@@ -454,6 +454,9 @@
             border-radius: 4px;
             display: inline-block;
         }
+        /* 联系人编辑：身份按钮组（恋人/朋友/同事）选中态 */
+        .ai-rel-btn { background:#FBF9F4; color:#775C56; border:1px solid #E8D9D2; cursor:pointer; transition:all .15s; }
+        .ai-rel-btn.sel { background:#FFD3D4; border-color:#FFD3D4; font-weight:600; }
         /* 时间戳/系统消息变白开关（深色聊天背景时用）*/
         #conversation-page.conv-white-text .message-timestamp span,
         #conversation-page.conv-white-text .msg-nudge span,
@@ -2448,6 +2451,7 @@ DB.init();
                             <h3 class="font-bold mb-3 border-l-4 pl-2" style="color:#775C56; border-color:#FFD3D4;">核心</h3>
                             <div class="flex items-start gap-4 mb-4"><label for="ai-avatar-upload" class="w-20 h-20 rounded-2xl flex items-center justify-center text-3xl cursor-pointer overflow-hidden" style="background:#F2EDE4; border:none;"><img id="ai-avatar-preview" src="" class="hidden w-full h-full object-cover"><span id="ai-avatar-emoji" style="color:#775C56;font-size:26px;font-weight:300;line-height:1;">+</span></label><input type="file" id="ai-avatar-upload" class="hidden" accept="image/*"><div class="flex-1 space-y-2"><div><label style="color:#775C56; font-size:12px;">名字</label><input type="text" id="ai-name" class="w-full py-1" style="background:#FBF9F4; border:none; border-bottom:1px solid #775C56; color:#775C56; outline:none;"></div><div><label style="color:#775C56; font-size:12px;">备注</label><input type="text" id="ai-notes" class="w-full py-1" style="background:#FBF9F4; border:none; border-bottom:1px solid #775C56; color:#775C56; outline:none;"></div></div></div>
                             <div style="display:none;"><label style="color:#775C56; font-size:12px;">人设</label><textarea id="ai-persona" rows="3" class="w-full mt-1 p-2 rounded-lg text-sm resize-none" style="background:white; color:#775C56; border:none;"></textarea></div>
+                            <div class="mt-3"><label style="color:#775C56; font-size:12px;">身份</label><div id="ai-relationship" class="flex gap-2 mt-1"><button type="button" class="ai-rel-btn flex-1 py-1.5 rounded-lg text-sm" data-rel="lover">恋人</button><button type="button" class="ai-rel-btn flex-1 py-1.5 rounded-lg text-sm" data-rel="friend">朋友</button><button type="button" class="ai-rel-btn flex-1 py-1.5 rounded-lg text-sm" data-rel="colleague">同事</button></div><div style="color:#b0a090;font-size:11px;margin-top:4px;">决定 TA 在哪个互助会论坛发帖：恋人→AI互助会／G互助会，朋友→AI友谊训练营，同事→社畜AI论坛</div></div>
                         </div>
                         <div class="rounded-xl p-4 mb-4" style="background:#FBF9F4; box-shadow: 0 2px 8px rgba(119,92,86,0.15);">
                             <h3 class="font-bold mb-3 border-l-4 pl-2" style="color:#775C56; border-color:#D5EBE4;">记忆</h3>
@@ -6584,7 +6588,19 @@ DB.init();
                     title: '导航',
                     emptyHint: '还没有出行记录',
                     genHint: '点右上角"生成"记一次出行',
-                    prompt: (c, userNick) => `【任务】：以 "${c.name}" 的视角，记一次开车（或打车）出门的导航记录。\n要求：\n1. 贴合人设/生活/最近行程。可以是上下班通勤、去超市、去医院、约会、回家、出差等。\n2. 严格按以下格式输出，每行一个字段：\n起点：（出发地名字，5-15字，比如"家"/"公司"/"星巴克(国贸店)"）\n终点：（目的地名字，5-15字，比如"${userNick}家楼下"/"丽华苑小区"/"机场T2"/"妈妈家"）\n距离：（公里数，写"X.X公里"或"XX公里"）\n用时：（开车用时，比如"25分钟"/"1小时10分"）\n路况：（路况描述，4-10字，比如"一路畅通"/"堵成狗"/"小雨慢行"/"地库出门就堵"）\n备注：（这次出行的心情/目的/感想，第一人称，自然口语，25-60字。可以说为什么去/堵车有多烦/路上想什么/到了之后干嘛等）\n3. 不要加额外说明、不要加引号或编号。`,
+                    prompt: (c, userNick) => {
+                        // 【同城/异地判断】用户在 API 设置里填了所在城市，且这个联系人没开异地模式 → 强制同城
+                        const rawCity = (localStorage.getItem('weatherCity') || '').trim();
+                        const userCity = rawCity ? rawCity.split(',')[0].trim() : '';
+                        const isLongDistance = !!(c.mode && c.mode.longDistance);
+                        let cityRule = '';
+                        if (userCity && !isLongDistance) {
+                            cityRule = `\n【重要·同城】：你和「${userNick}」生活在同一座城市——${userCity}。这次出行的起点、终点都必须是 ${userCity}（或其周边）真实存在或合理的地点，地名/商圈/路名都要符合 ${userCity} 当地，绝不要出现其它城市。`;
+                        } else if (isLongDistance) {
+                            cityRule = `\n【异地设定】：你和「${userNick}」在不同城市，这次出行发生在你自己所在的城市，地点写你那边的就好，不必和对方同城。`;
+                        }
+                        return `【任务】：以 "${c.name}" 的视角，记一次开车（或打车）出门的导航记录。${cityRule}\n要求：\n1. 贴合人设/生活/最近行程。可以是上下班通勤、去超市、去医院、约会、回家、出差等。\n2. 严格按以下格式输出，每行一个字段：\n起点：（出发地名字，5-15字，比如"家"/"公司"/"星巴克(国贸店)"）\n终点：（目的地名字，5-15字，比如"${userNick}家楼下"/"丽华苑小区"/"机场T2"/"妈妈家"）\n距离：（公里数，写"X.X公里"或"XX公里"）\n用时：（开车用时，比如"25分钟"/"1小时10分"）\n路况：（路况描述，4-10字，比如"一路畅通"/"堵成狗"/"小雨慢行"/"地库出门就堵"）\n备注：（这次出行的心情/目的/感想，第一人称，自然口语，25-60字。可以说为什么去/堵车有多烦/路上想什么/到了之后干嘛等）\n3. 不要加额外说明、不要加引号或编号。`;
+                    },
                     parse: (text) => {
                         const lines = text.split('\n').map(l => l.trim()).filter(l => l);
                         let from = '', to = '', distance = '', duration = '', traffic = '', note = '';
@@ -9618,6 +9634,12 @@ DB.init();
                 const avatarPreview = appPage.querySelector('#ai-avatar-preview');
                 const avatarEmoji = appPage.querySelector('#ai-avatar-emoji');
                 const avatarUpload = appPage.querySelector('#ai-avatar-upload');
+                // 身份按钮组（恋人/朋友/同事）：单选，决定 TA 在哪个互助会论坛发帖
+                const relBtns = appPage.querySelectorAll('.ai-rel-btn');
+                const setRelationship = (rel) => relBtns.forEach(b => b.classList.toggle('sel', b.dataset.rel === (rel || 'lover')));
+                const getRelationship = () => { const s = appPage.querySelector('.ai-rel-btn.sel'); return s ? s.dataset.rel : 'lover'; };
+                relBtns.forEach(b => b.onclick = () => setRelationship(b.dataset.rel));
+                setRelationship('lover'); // 新建联系人时默认选中"恋人"
 
                 const worldBooks = JSON.parse(localStorage.getItem('m-tea-world-books-list') || '[]');
                 function renderWorldBookChecklist(selectedIds) {
@@ -9686,6 +9708,7 @@ DB.init();
                         nameInput.value = contact.name;
                         notesInput.value = contact.notes || '';
                         personaInput.value = contact.persona || '';
+                        setRelationship(contact.relationship || 'lover'); // 读取身份，老联系人缺省恋人
                         if(contact.memory) {
                             contextLimitInput.value = contact.memory.contextLimit || 20;
                             renderWorldBookChecklist(contact.memory.worldBookIds || (contact.memory.worldBookId ? [contact.memory.worldBookId] : []));
@@ -9739,6 +9762,7 @@ DB.init();
                         notes: notesInput.value,
                         avatar: currentAvatar,
                         persona: _personaToSave,
+                        relationship: getRelationship(),
                         memory: {
                             contextLimit: contextLimitInput.value,
                             worldBookIds: Array.from(appPage.querySelectorAll('.wb-check:checked')).map(cb => cb.value),
@@ -11136,13 +11160,18 @@ const ApiHandler = {
             }
 
             function buildAuthorPool() {
+                // 按论坛类型决定需要的身份：友谊营=朋友，社畜论坛=同事，其余(恋爱AI互助会/G互助会)=恋人
+                const needRel = isFriend ? 'friend' : isWork ? 'colleague' : 'lover';
                 const contacts = (DB.getContacts && DB.getContacts()) || [];
-                const userAis = contacts.map(c => ({
-                    name: c.notes || c.name,
-                    persona: c.persona || '',
-                    emoji: '🤖',
-                    isUserAi: true
-                }));
+                // 只让"身份对得上"的联系人来这个论坛发帖；老联系人没设身份的默认按恋人算
+                const userAis = contacts
+                    .filter(c => (c.relationship || 'lover') === needRel)
+                    .map(c => ({
+                        name: c.notes || c.name,
+                        persona: c.persona || '',
+                        emoji: '🤖',
+                        isUserAi: true
+                    }));
                 const fakeAis = isG ? [
                     { name: '小G', persona: '理性、爱分析、说话有点冷淡但其实很温柔的 ChatGPT', emoji: '💚' },
                     { name: 'GPT酱', persona: '元气满满、用很多颜文字、会在每句话最后加emoji的 ChatGPT', emoji: '✨' },
