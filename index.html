@@ -461,6 +461,11 @@
             color: #ffffff !important;
             background: rgba(0,0,0,0.18) !important;
         }
+        /* 变白开关：引用文字也跟着变白（深色/壁纸背景下原本的浅棕看不清）*/
+        #conversation-page.conv-white-text .quote-content {
+            color: #ffffff !important;
+            background: rgba(0,0,0,0.22) !important;
+        }
         /* 展开撤回内容时的竖向容器：不要被套气泡背景 */
         .plot-card em { font-style: italic; color: #A08578; opacity: 0.95; }
         .plot-card p { margin: 0 0 10px 0; text-indent: 0; }
@@ -3069,15 +3074,21 @@ DB.init();
                                 try { cbg = await window.ImageDB.resolve(cbg); } catch(e) { cbg = ''; }
                             }
                             if (cbg) {
-                                // 聊天壁纸：消息区透出壁纸；顶栏/输入栏/操作栏做成毛玻璃（半透明+模糊），柔和透出壁纸又保证可读
+                                // 聊天壁纸：消息区透出壁纸。顶栏/输入栏/操作栏的样式只看"有没有开自定义主题"：
+                                // 开了主题 → 毛玻璃；默认主题（没开）→ 系统米白实色（壁纸只在消息区透出，不透到栏上）
                                 p.style.background = `url(${cbg}) center/cover no-repeat, #FBF9F4`;
                                 p.classList.remove('conv-themed');
                                 box.style.background = 'transparent';
+                                const hasTheme = !!localStorage.getItem('app_theme_bg');
                                 const _hdr = p.querySelector('.app-header-520');
                                 const _footer = p.querySelector('.chat-footer');
                                 const _selbar = p.querySelector('#select-bar');
-                                const _frost = (el) => { if(!el) return; el.style.background = 'rgba(251,249,244,0.3)'; el.style.backdropFilter = 'blur(8px)'; el.style.webkitBackdropFilter = 'blur(8px)'; };
-                                _frost(_hdr); _frost(_footer); _frost(_selbar);
+                                const _applyChrome = (el) => {
+                                    if (!el) return;
+                                    if (hasTheme) { el.style.background = 'rgba(251,249,244,0.3)'; el.style.backdropFilter = 'blur(8px)'; el.style.webkitBackdropFilter = 'blur(8px)'; }
+                                    else { el.style.background = ''; el.style.backdropFilter = ''; el.style.webkitBackdropFilter = ''; } // 还原系统米白
+                                };
+                                _applyChrome(_hdr); _applyChrome(_footer); _applyChrome(_selbar);
                             } else {
                                 box.style.background = 'transparent';
                             }
@@ -3731,8 +3742,14 @@ DB.init();
                             if(!msg) return;
                             const menu = document.createElement('div');
                             menu.className = 'ctx-menu';
+                            // 【心声禁引】AI 的心声气泡（〈...〉）是角色的内心独白，角色"以为"用户看不到，
+                            // 所以用户也不应该能引用它来跟 AI 对话——会破坏心声"私密"的设定
+                            const _isAiThought = msg.sender !== 'me'
+                                && (!msg.type || msg.type === 'text')
+                                && typeof msg.text === 'string'
+                                && /^〈[\s\S]*〉$/.test(msg.text.trim());
                             const items = [
-                                {label:'引用', action:()=>{
+                                ...(_isAiThought ? [] : [{label:'引用', action:()=>{
                                     const qSender = msg.sender==='me'?(localStorage.getItem('user_nick')||'我'):(c.notes||c.name||'对方');
                                     let qText = msg.text||'[消息]';
                                     if(msg.type==='image'||msg.type==='photo') qText='[图片]';
@@ -3741,7 +3758,7 @@ DB.init();
                                     currentQuote = {sender:qSender, text:qText};
                                     quotePreview.style.display='flex';
                                     p.querySelector('#quote-text-content').textContent=qSender+': '+qText;
-                                }},
+                                }}]),
                                 {label:'复制', action:()=>{ navigator.clipboard?.writeText(msg.text||'').catch(()=>{}); }},
                                 ...((typeof msg.text === 'string' && msg.text !== '' && msg.type!=='transfer' && msg.type!=='gift' && msg.type!=='image' && msg.type!=='photo' && msg.type!=='sticker' && msg.type!=='voice') ? [{label:'编辑', action:()=>{
                                     const dlg = document.createElement('div');
@@ -10410,6 +10427,14 @@ DB.init();
                     appPage.style.transformOrigin = `${((iconRect.left + iconRect.width / 2) - screenRect.left) / screenRect.width * 100}% ${((iconRect.top + iconRect.height / 2) - screenRect.top) / screenRect.height * 100}%`;
                     document.querySelector('.mobile-container').classList.add('app-open');
                     appPage.classList.add('active');
+                    // 【修复"点520弹奇怪窗"bug】520(chat) app 每次打开都强制回到消息列表页（200）
+                    // 原因：520 关闭时内容不清空只是藏起来，再点开停在上次离开的页。如果上次停在"我"，
+                    // 那"拍一拍/恢复默认主题"两行就摆在那里，手机点图标的"幽灵点击"会穿透到下面误触它们。
+                    // 修法：每次打开 520 都跳回消息列表（200），那两个会被误触的设置行不在打开时的画面里。
+                    if (appId === 'chat') {
+                        const nav200 = appPage.querySelector('.nav-item-520[data-page="200"]');
+                        if (nav200) nav200.click();
+                    }
                     const _ind = document.getElementById('app-home-indicator'); _ind.style.display = 'block'; if(document.getElementById('chat-page').classList.contains('active')) _ind.style.setProperty('display','none','important');
                 }
             });
