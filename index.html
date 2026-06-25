@@ -592,6 +592,7 @@ const DB = (function() {
     let _contacts = [];
     let _chats = {};
     let _moments = [];
+    let _coreads = {};  // 共读记录：{ id: record }
     let _me = null;
     let _ready = false;
     
@@ -639,6 +640,7 @@ const DB = (function() {
             _contacts = JSON.parse(localStorage.getItem('m-tea-contacts-v2') || '[]');
             _chats = JSON.parse(localStorage.getItem('m-tea-chats-v2') || '{}');
             _moments = JSON.parse(localStorage.getItem('m-tea-moments-v2') || '[]');
+            _coreads = JSON.parse(localStorage.getItem('m-tea-coreads-v2') || '{}');
             _me = JSON.parse(localStorage.getItem('m-tea-me-v2') || 'null');
             _ready = true;
             return;
@@ -646,11 +648,12 @@ const DB = (function() {
         
         // 从 IndexedDB 加载
         try {
-            const [c, ch, m, me] = await Promise.all([
+            const [c, ch, m, me, cr] = await Promise.all([
                 db.kv.get('contacts').catch(() => null),
                 db.kv.get('chats').catch(() => null),
                 db.kv.get('moments').catch(() => null),
-                db.kv.get('me').catch(() => null)
+                db.kv.get('me').catch(() => null),
+                db.kv.get('coreads').catch(() => null)
             ]);
             
             // 如果 IndexedDB 里没数据，尝试从 localStorage 迁移
@@ -666,6 +669,7 @@ const DB = (function() {
                 _chats = JSON.parse(lsChats || '{}');
                 _moments = JSON.parse(lsMoments || '[]');
                 _me = JSON.parse(lsMe || 'null');
+                _coreads = JSON.parse(localStorage.getItem('m-tea-coreads-v2') || '{}');
                 // 立即写入 IndexedDB
                 await db.kv.bulkPut([
                     { key: 'contacts', value: _contacts },
@@ -677,6 +681,7 @@ const DB = (function() {
                 localStorage.removeItem('m-tea-contacts-v2');
                 localStorage.removeItem('m-tea-chats-v2');
                 localStorage.removeItem('m-tea-moments-v2');
+                localStorage.removeItem('m-tea-coreads-v2');
                 localStorage.removeItem('m-tea-me-v2');
                 localStorage.setItem('_db_to_indexeddb_done', '1');
                 console.log('[DB] ✅ 迁移完成');
@@ -684,11 +689,12 @@ const DB = (function() {
                 _contacts = (c && c.value) || [];
                 _chats = (ch && ch.value) || {};
                 _moments = (m && m.value) || [];
+                _coreads = (cr && cr.value) || {};
                 _me = (me && me.value) || null;
             }
         } catch(e) {
             console.error('[DB] 初始化失败，使用空数据', e);
-            _contacts = []; _chats = {}; _moments = []; _me = null;
+            _contacts = []; _chats = {}; _moments = []; _coreads = {}; _me = null;
         }
         
         if (!_me) {
@@ -766,6 +772,13 @@ const DB = (function() {
             _moments = moments || [];
             _scheduleSave('moments', _moments);
         },
+
+        // --- CoReads 共读记录（map: id -> record）---
+        getCoReads: function() { return _coreads; },
+        saveCoReads: function(coreads) { _coreads = coreads || {}; _scheduleSave('coreads', _coreads); },
+        getCoRead: function(id) { return _coreads[id] || null; },
+        saveCoRead: function(record) { if (!record || !record.id) return; _coreads[record.id] = record; _scheduleSave('coreads', _coreads); },
+        deleteCoRead: function(id) { delete _coreads[id]; _scheduleSave('coreads', _coreads); },
         
         // --- Me ---
         getMe: function() {
@@ -786,7 +799,7 @@ const DB = (function() {
         },
         // 清空所有数据（重置用）
         clearAll: async function() {
-            _contacts = []; _chats = {}; _moments = []; _me = null;
+            _contacts = []; _chats = {}; _moments = []; _coreads = {}; _me = null;
             if (_db) await _db.kv.clear();
         }
     };
@@ -855,6 +868,7 @@ DB.init();
         <div id="g-love-club-page" class="app-page"></div>
         <div id="virtual-hug-page" class="app-page"></div>
         <div id="beauty-cabinet-page" class="app-page"></div>
+        <div id="coread-page" class="app-page"></div>
         <div id="ai-friend-camp-page" class="app-page"></div>
         <div id="work-ai-club-page" class="app-page"></div>
         <div id="food-map-page" class="app-page"></div>
@@ -1989,6 +2003,7 @@ DB.init();
                 { id: 'g-love-club', name: 'G互助会', emoji: '💚', container: '.app-grid-page2' },
                 { id: 'virtual-hug', name: '虚拟抱抱', emoji: '🧸', container: '.app-grid-page2' },
                 { id: 'beauty-cabinet', name: '香言护语', emoji: '💄', container: '.app-grid-page2' },
+                { id: 'coread', name: '共读', emoji: '📕', container: '.app-grid-page2' },
                 { id: 'ai-friend-camp', name: 'AI友谊训练营', emoji: '🌈', container: '.app-grid-page2' },
                 { id: 'work-ai-club', name: '社畜AI论坛', emoji: '💼', container: '.app-grid-page2' },
                 { id: 'food-map', name: '美食地图', emoji: '🍱', container: '.app-grid-page2' },
@@ -9906,7 +9921,7 @@ DB.init();
                 const appNameMap = {
                     'chat': '520', 'couple-space': '心跳同频中', 'world-book': '世界书', 'check-phone': '查手机',
                     'lullaby': '哄睡', 'ai-love-club': 'AI互助会', 'g-love-club': 'G互助会', 'virtual-hug': '虚拟抱抱',
-                    'beauty-cabinet': '香言护语', 'ai-friend-camp': 'AI友谊训练营', 'work-ai-club': '社畜AI论坛', 'food-map': '美食地图', 'extra-room': '番外处', 'game-hall': '游戏厅', 'dream-journal': '梦境笔记', 'praise-machine': '夸夸机',
+                    'beauty-cabinet': '香言护语', 'ai-friend-camp': 'AI友谊训练营', 'work-ai-club': '社畜AI论坛', 'food-map': '美食地图', 'extra-room': '番外处', 'game-hall': '游戏厅', 'dream-journal': '梦境笔记', 'praise-machine': '夸夸机', 'coread': '共读',
                     'api-settings': 'API', 'phone': '通话', 'album': '相册', 'settings': '设置'
                 };
                 const appsToChange = Object.keys(appNameMap).map(id => ({ id, name: appNameMap[id] }));
@@ -9984,6 +9999,7 @@ DB.init();
                         else if (appId === 'g-love-club') setupAILoveClubApp(appPage, 'g');
                         else if (appId === 'virtual-hug') setupVirtualHugApp(appPage);
                         else if (appId === 'beauty-cabinet') setupBeautyCabinetApp(appPage);
+                            else if (appId === 'coread') setupCoReadApp(appPage);
                         else if (appId === 'ai-friend-camp') setupAILoveClubApp(appPage, 'friend');
                         else if (appId === 'work-ai-club') setupAILoveClubApp(appPage, 'work');
                         else if (appId === 'food-map') setupFoodMapApp(appPage);
@@ -10108,7 +10124,7 @@ DB.init();
                                 const appNameMap = {
                                     'chat': '520', 'couple-space': '心跳同频中', 'world-book': '世界书', 'check-phone': '查手机',
                                     'lullaby': '哄睡', 'ai-love-club': 'AI互助会', 'g-love-club': 'G互助会', 'virtual-hug': '虚拟抱抱',
-                                    'beauty-cabinet': '香言护语', 'ai-friend-camp': 'AI友谊训练营', 'work-ai-club': '社畜AI论坛', 'food-map': '美食地图', 'extra-room': '番外处', 'game-hall': '游戏厅', 'dream-journal': '梦境笔记', 'praise-machine': '夸夸机',
+                                    'beauty-cabinet': '香言护语', 'ai-friend-camp': 'AI友谊训练营', 'work-ai-club': '社畜AI论坛', 'food-map': '美食地图', 'extra-room': '番外处', 'game-hall': '游戏厅', 'dream-journal': '梦境笔记', 'praise-machine': '夸夸机', 'coread': '共读',
                                     'api-settings': 'API', 'phone': '通话', 'album': '相册', 'settings': '设置'
                                 };
                                 const appsToChange = Object.keys(appNameMap).map(id => ({ id, name: appNameMap[id] }));
@@ -11785,13 +11801,25 @@ const ApiHandler = {
             });
         }
 
-        // ============ 香言护语：肤护品/化妆品收纳柜 ============
+        // ============ 香言护语：护肤化妆收纳柜（中等版：场景+步骤流程+续聊）============
         function setupBeautyCabinetApp(appPage) {
+            const SKIN_TYPES = ['卸妆','洁面','水','精华','乳霜','防晒','面膜','眼霜','其他'];
+            const MAKE_TYPES = ['底妆','遮瑕','定妆','修容','眼影','眼线','睫毛','眉','腮红','口红','高光','其他'];
+            const SCENARIOS = [
+                { k:'morning', label:'晨间护肤', kind:'skin' },
+                { k:'night',   label:'夜间护肤', kind:'skin' },
+                { k:'mask',    label:'敷面膜',   kind:'skin' },
+                { k:'makeup',  label:'化妆',     kind:'makeup' },
+                { k:'touchup', label:'补妆',     kind:'makeup' },
+                { k:'skin-ai', label:'给TA护肤', kind:'skin', onAI:true },
+                { k:'make-ai', label:'给TA化妆', kind:'makeup', onAI:true },
+            ];
+
             appPage.innerHTML = `
             <style>
                 .bc-page { background: linear-gradient(180deg, #f5edff 0%, #ebdcff 50%, #ddc8f5 100%); min-height: 100%; color: #4a3370; padding-bottom: 30px; overflow-y: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; height: 100%; }
                 .bc-page::-webkit-scrollbar { display: none; }
-                .bc-header { padding: max(32px, env(safe-area-inset-top, 32px)) 16px 10px; display: flex; align-items: center; justify-content: space-between; }
+                .bc-header { padding: 32px 16px 10px; display: flex; align-items: center; justify-content: space-between; }
                 .bc-back { font-size: 26px; cursor: pointer; color: #8a6dc9; width: 30px; }
                 .bc-title { font-size: 17px; font-weight: 600; color: #8a6dc9; }
                 .bc-sub { font-size: 11px; color: #9c87b8; text-align: center; opacity: 0.7; margin-bottom: 12px; }
@@ -11799,21 +11827,46 @@ const ApiHandler = {
                 .bc-narrator-avatar { width: 34px; height: 34px; border-radius: 8px; background: rgba(138,109,201,0.15); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; overflow: hidden; }
                 .bc-narrator-label { font-size: 10px; color: #9c87b8; margin-bottom: 1px; }
                 .bc-narrator-name { font-size: 13px; font-weight: 500; color: #4a3370; }
-                .bc-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 20px 14px; }
-                .bc-action { background: white; border: none; padding: 11px 8px; border-radius: 14px; font-size: 12px; color: #4a3370; cursor: pointer; box-shadow: 0 2px 8px rgba(138,109,201,0.08); transition: all 0.15s; }
-                .bc-action:active { transform: scale(0.96); }
-                .bc-action:disabled { opacity: 0.4; }
+                .bc-sec-label { font-size: 11px; color: #9c87b8; margin: 2px 24px 6px; }
+                .bc-chips { display: flex; flex-wrap: wrap; gap: 7px; margin: 0 20px 12px; }
+                .bc-chip { background: white; border: 1px solid rgba(138,109,201,0.18); padding: 7px 12px; border-radius: 14px; font-size: 12px; color: #4a3370; cursor: pointer; box-shadow: 0 1px 4px rgba(138,109,201,0.06); transition: all 0.12s; }
+                .bc-chip:active { transform: scale(0.95); }
+                .bc-chip.dim { opacity: 0.4; }
+                .bc-free { display: flex; gap: 7px; margin: 0 20px 14px; }
+                .bc-free input { flex: 1; min-width: 0; border: none; background: white; border-radius: 14px; padding: 9px 12px; font-size: 12px; color: #4a3370; outline: none; box-shadow: 0 1px 4px rgba(138,109,201,0.06); }
+                .bc-free button { flex-shrink: 0; border: none; background: #b89ce0; color: white; border-radius: 14px; padding: 9px 14px; font-size: 13px; font-weight: 600; cursor: pointer; }
+                .bc-result { margin: 0 20px 14px; }
+                .bc-result-empty { background: white; border-radius: 16px; padding: 16px; font-size: 13px; color: #9c87b8; font-style: italic; text-align: center; opacity: 0.7; box-shadow: 0 2px 10px rgba(138,109,201,0.06); }
+                .bc-scene-title { font-size: 12px; color: #8a6dc9; font-weight: 600; margin: 0 4px 8px; }
+                .bc-step { background: white; border-radius: 14px; padding: 11px 13px; margin-bottom: 8px; display: flex; gap: 10px; box-shadow: 0 2px 8px rgba(138,109,201,0.07); }
+                .bc-step-no { flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; background: #ebdcff; color: #8a6dc9; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+                .bc-step-text { font-size: 13px; line-height: 1.7; color: #4a3370; white-space: pre-wrap; }
+                .bc-bubble { background: white; border-radius: 14px; padding: 10px 13px; margin-bottom: 8px; font-size: 13px; line-height: 1.7; color: #4a3370; white-space: pre-wrap; box-shadow: 0 2px 8px rgba(138,109,201,0.07); }
+                .bc-bubble.me { background: #efe2ff; }
+                .bc-followup { display: none; gap: 7px; margin-top: 4px; }
+                .bc-followup.on { display: flex; }
+                .bc-followup input { flex: 1; min-width: 0; border: none; background: white; border-radius: 14px; padding: 9px 12px; font-size: 12px; color: #4a3370; outline: none; box-shadow: 0 1px 4px rgba(138,109,201,0.06); }
+                .bc-followup button { flex-shrink: 0; border: none; background: #b89ce0; color: white; border-radius: 14px; padding: 9px 14px; font-size: 13px; cursor: pointer; }
                 .bc-shelf-title { font-size: 12px; color: #9c87b8; margin: 4px 24px 6px; display: flex; justify-content: space-between; align-items: center; }
                 .bc-shelf-add { color: #8a6dc9; font-size: 18px; cursor: pointer; padding: 0 4px; }
                 .bc-shelf { background: rgba(255,255,255,0.5); border-radius: 16px; margin: 0 20px 12px; padding: 14px 12px; min-height: 50px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px 8px; justify-items: center; }
                 .bc-item { width: 100%; max-width: 56px; text-align: center; cursor: pointer; position: relative; }
                 .bc-item-img { width: 48px; height: 48px; margin: 0 auto; border-radius: 10px; background: #fff; display: flex; align-items: center; justify-content: center; font-size: 22px; overflow: hidden; }
-                .bc-item-img img { width: 100%; height: 100%; object-fit: cover; }
                 .bc-item-name { font-size: 10px; color: #4a3370; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+                .bc-item-type { font-size: 9px; color: #9c87b8; }
                 .bc-item-del { position: absolute; top: -4px; right: -4px; width: 18px; height: 18px; background: #b89ce0; color: white; border-radius: 50%; font-size: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
                 .bc-empty { grid-column: 1 / -1; font-size: 11px; color: #9c87b8; opacity: 0.6; padding: 10px; text-align: center; white-space: nowrap; }
-                .bc-response { margin: 0 20px 14px; background: white; border-radius: 16px; padding: 12px 14px; font-size: 13px; line-height: 1.7; color: #4a3370; min-height: 48px; box-shadow: 0 2px 10px rgba(138,109,201,0.06); white-space: pre-wrap; }
-                .bc-response.empty { color: #9c87b8; font-style: italic; text-align: center; opacity: 0.7; }
+                .bc-modal-mask { position:absolute; inset:0; background:rgba(0,0,0,0.45); z-index:1000; display:flex; align-items:center; justify-content:center; padding:24px; }
+                .bc-modal { background:#fff; border-radius:18px; padding:18px; width:100%; max-width:300px; }
+                .bc-modal h4 { font-size:14px; color:#4a3370; font-weight:600; margin-bottom:12px; }
+                .bc-modal input { width:100%; border:1px solid #e8def5; border-radius:10px; padding:9px 11px; font-size:13px; color:#4a3370; outline:none; margin-bottom:12px; }
+                .bc-type-chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+                .bc-type-chip { padding:5px 10px; border-radius:12px; font-size:11px; background:#f3edfb; color:#7a64a8; cursor:pointer; border:1px solid transparent; }
+                .bc-type-chip.sel { background:#b89ce0; color:#fff; }
+                .bc-modal-btns { display:flex; gap:8px; }
+                .bc-modal-btns button { flex:1; border:none; border-radius:10px; padding:9px; font-size:13px; cursor:pointer; }
+                .bc-cancel { background:#f0ebf8; color:#8a6dc9; }
+                .bc-ok { background:#b89ce0; color:#fff; }
             </style>
             <div class="bc-page">
                 <div class="bc-header">
@@ -11832,14 +11885,16 @@ const ApiHandler = {
                     <span style="color:#ccc;font-size:16px;">›</span>
                 </div>
 
-                <div class="bc-actions">
-                    <button class="bc-action" data-act="ai-skin-me" disabled>TA 给我护肤 💧</button>
-                    <button class="bc-action" data-act="ai-make-me" disabled>TA 给我化妆 💋</button>
-                    <button class="bc-action" data-act="me-skin-ai" disabled>给 TA 护肤 🧴</button>
-                    <button class="bc-action" data-act="me-make-ai" disabled>给 TA 化妆 💄</button>
+                <div class="bc-sec-label">想做点什么呀～</div>
+                <div class="bc-chips" id="bc-chips">
+                    ${SCENARIOS.map(sc=>`<button class="bc-chip" data-sc="${sc.k}">${sc.label}</button>`).join('')}
+                </div>
+                <div class="bc-free">
+                    <input type="text" id="bc-free-input" placeholder="或者…说说你想要的（比如 帮我做个补水急救）">
+                    <button id="bc-free-go">走起</button>
                 </div>
 
-                <div class="bc-response empty" id="bc-response">选好联系人和一项动作，开始吧～</div>
+                <div class="bc-result"><div class="bc-result-empty" id="bc-result-empty">选好 TA、点一个场景，就开始啦～</div></div>
 
                 <div class="bc-shelf-title"><span>🧴 护肤区</span><span class="bc-shelf-add" data-shelf="skin">＋</span></div>
                 <div class="bc-shelf" id="bc-shelf-skin"></div>
@@ -11849,105 +11904,87 @@ const ApiHandler = {
 
             const KEY = 'beauty_cabinet_data';
             const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || '{"skin":[],"makeup":[]}'); } catch(e) { return {skin:[],makeup:[]}; } };
-            const save = (d) => localStorage.setItem(KEY, JSON.stringify(d));
+            const save = (d) => { try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e){} };
             let data = load();
             if (!data.skin) data.skin = [];
             if (!data.makeup) data.makeup = [];
             let selectedNarrator = null;
-            let editMode = false;
+            let convo = [], sceneLabel = '';
+            const resultEl = appPage.querySelector('.bc-result');
 
-            const updateBtns = () => {
-                const hasItems = data.skin.length > 0 || data.makeup.length > 0;
-                appPage.querySelectorAll('.bc-action').forEach(b => b.disabled = !(selectedNarrator && hasItems));
+            // 头像渲染（支持 imgdb:// / data: / http / inline svg / emoji）
+            const bcAvatarHtml = (av) => {
+                if (!av) return '👤';
+                if (typeof av === 'string' && av.trim().startsWith('<')) return av;
+                if (typeof av === 'string' && (av.startsWith('imgdb://') || av.startsWith('data:') || av.startsWith('http'))) return `<img data-bcimg="${av}" style="width:100%;height:100%;object-fit:cover;" alt="">`;
+                return av;
+            };
+            const bcResolveAvatars = (root) => {
+                root.querySelectorAll('img[data-bcimg]').forEach(async img => {
+                    const src = img.getAttribute('data-bcimg');
+                    try {
+                        if (src.startsWith('imgdb://') && window.ImageDB && window.ImageDB.resolve) { img.src = await ImageDB.resolve(src); }
+                        else { img.src = src; }
+                    } catch(e) {}
+                });
             };
 
+            // —— 收纳柜 ——
             const renderShelf = (type) => {
                 const el = appPage.querySelector('#bc-shelf-' + type);
                 const items = data[type] || [];
-                if (items.length === 0) {
-                    el.innerHTML = `<div class="bc-empty">还没有${type==='skin'?'护肤':'彩妆'}品，点 ＋ 添加</div>`;
-                    return;
-                }
+                if (items.length === 0) { el.innerHTML = `<div class="bc-empty">还没有${type==='skin'?'护肤':'彩妆'}品，点 ＋ 添加</div>`; return; }
                 el.innerHTML = '';
                 items.forEach((it, idx) => {
                     const wrap = document.createElement('div');
                     wrap.className = 'bc-item';
-                    const imgBox = document.createElement('div');
-                    imgBox.className = 'bc-item-img';
-                    if (it.imageRef) {
-                        const img = document.createElement('img');
-                        img.alt = it.name || '';
-                        (async () => {
-                            if (window.ImageDB) { try { await ImageDB.readyPromise; } catch(e){} }
-                            try {
-                                if (it.imageRef.startsWith('imgdb://')) {
-                                    const url = await ImageDB.resolve(it.imageRef);
-                                    if (url) img.src = url;
-                                } else { img.src = it.imageRef; }
-                            } catch(e) {}
-                        })();
-                        imgBox.appendChild(img);
-                    } else {
-                        imgBox.textContent = type === 'skin' ? '🧴' : '💄';
-                    }
-                    const nm = document.createElement('div');
-                    nm.className = 'bc-item-name';
-                    nm.textContent = it.name || '未命名';
-                    wrap.appendChild(imgBox);
-                    wrap.appendChild(nm);
-                    if (editMode) {
-                        const del = document.createElement('span');
-                        del.className = 'bc-item-del';
-                        del.textContent = '−';
-                        del.onclick = (e) => {
-                            e.stopPropagation();
-                            data[type].splice(idx, 1);
-                            save(data);
-                            renderShelf(type);
-                            updateBtns();
-                        };
-                        wrap.appendChild(del);
-                    }
-                    // 长按进入编辑模式
-                    let timer;
-                    wrap.addEventListener('mousedown', () => { timer = setTimeout(() => { editMode = true; renderShelf('skin'); renderShelf('makeup'); }, 600); });
-                    wrap.addEventListener('touchstart', () => { timer = setTimeout(() => { editMode = true; renderShelf('skin'); renderShelf('makeup'); }, 600); }, { passive: true });
-                    wrap.addEventListener('mouseup', () => clearTimeout(timer));
-                    wrap.addEventListener('touchend', () => clearTimeout(timer));
-                    wrap.addEventListener('click', () => {
-                        if (editMode) return;
-                        // 点击编辑名字
-                        const newName = prompt('修改名字', it.name || '');
-                        if (newName !== null) { it.name = newName.slice(0, 12); save(data); renderShelf(type); }
-                    });
+                    wrap.innerHTML = `<div class="bc-item-img">${type==='skin'?'🧴':'💄'}</div>
+                        <div class="bc-item-name">${(it.name||'未命名').replace(/</g,'&lt;')}</div>
+                        ${it.type?`<div class="bc-item-type">${it.type}</div>`:''}
+                        <span class="bc-item-del">−</span>`;
+                    wrap.querySelector('.bc-item-del').onclick = (e) => { e.stopPropagation(); data[type].splice(idx,1); save(data); renderShelf(type); };
+                    wrap.querySelector('.bc-item-img').onclick = wrap.querySelector('.bc-item-name').onclick = () => openItemModal(type, idx);
                     el.appendChild(wrap);
                 });
             };
 
-            // 点击 app-page 外面退出编辑模式
-            appPage.querySelector('.bc-page').addEventListener('click', (e) => {
-                if (editMode && !e.target.closest('.bc-shelf') && !e.target.closest('.bc-shelf-add')) {
-                    editMode = false;
-                    renderShelf('skin');
-                    renderShelf('makeup');
-                }
-            });
-
-            // 添加按钮：只输入文字名字，不拍照上传
-            appPage.querySelectorAll('.bc-shelf-add').forEach(btn => {
-                btn.onclick = () => {
-                    const type = btn.dataset.shelf;
-                    const name = prompt('记录一件' + (type === 'skin' ? '护肤品' : '彩妆') + '～\n（直接输入名字就好）', type === 'skin' ? '我的精华' : '我的口红');
-                    if (name === null) return;
-                    if (!name.trim()) return;
-                    data[type].push({ name: name.slice(0,12) || '未命名' });
-                    save(data);
-                    renderShelf(type);
-                    updateBtns();
+            // 添加/编辑产品的小弹窗（名字 + 类型）
+            function openItemModal(type, editIdx) {
+                const types = type==='skin' ? SKIN_TYPES : MAKE_TYPES;
+                const editing = (editIdx!=null);
+                const cur = editing ? data[type][editIdx] : { name:'', type:'' };
+                let pickedType = cur.type || '';
+                const mask = document.createElement('div');
+                mask.className = 'bc-modal-mask';
+                mask.innerHTML = `<div class="bc-modal">
+                    <h4>${editing?'编辑':'添加'}一件${type==='skin'?'护肤品':'彩妆'}</h4>
+                    <input type="text" id="bc-m-name" maxlength="14" placeholder="名字，比如 ${type==='skin'?'雅诗兰黛小棕瓶':'ysl口红'}" value="${(cur.name||'').replace(/"/g,'&quot;')}">
+                    <div class="bc-type-chips">${types.map(t=>`<span class="bc-type-chip${t===pickedType?' sel':''}" data-t="${t}">${t}</span>`).join('')}</div>
+                    <input type="text" id="bc-m-note" maxlength="20" placeholder="小备注（可选，比如 干皮用 / 香芋色 / 晚上用）" value="${(cur.note||'').replace(/"/g,'&quot;')}">
+                    <div class="bc-modal-btns"><button class="bc-cancel">取消</button><button class="bc-ok">${editing?'保存':'添加'}</button></div>
+                </div>`;
+                appPage.querySelector('.bc-page').appendChild(mask);
+                const nameInput = mask.querySelector('#bc-m-name');
+                mask.querySelectorAll('.bc-type-chip').forEach(c => c.onclick = () => {
+                    pickedType = (pickedType===c.dataset.t) ? '' : c.dataset.t;
+                    mask.querySelectorAll('.bc-type-chip').forEach(x => x.classList.toggle('sel', x.dataset.t===pickedType));
+                });
+                mask.querySelector('.bc-cancel').onclick = () => mask.remove();
+                mask.onclick = (e) => { if (e.target===mask) mask.remove(); };
+                mask.querySelector('.bc-ok').onclick = () => {
+                    const nm = nameInput.value.trim();
+                    if (!nm) { nameInput.focus(); return; }
+                    const note = (mask.querySelector('#bc-m-note').value || '').trim().slice(0,20);
+                    if (editing) { data[type][editIdx] = { name:nm.slice(0,14), type:pickedType, note }; }
+                    else { data[type].push({ name:nm.slice(0,14), type:pickedType, note }); }
+                    save(data); renderShelf(type); mask.remove();
                 };
-            });
+                setTimeout(()=>nameInput.focus(), 50);
+            }
 
-            // 联系人选择
+            appPage.querySelectorAll('.bc-shelf-add').forEach(btn => btn.onclick = () => openItemModal(btn.dataset.shelf, null));
+
+            // —— 选联系人 ——
             appPage.querySelector('#bc-narrator-row').onclick = () => {
                 const contacts = (typeof DB !== 'undefined' && DB.getContacts) ? DB.getContacts() : [];
                 const overlay = document.createElement('div');
@@ -11960,116 +11997,616 @@ const ApiHandler = {
                         <span id="bc-close" style="font-size:22px;color:#aaa;cursor:pointer;">×</span>
                     </div>
                     ${contacts.length === 0 ? '<div style="opacity:0.4;font-size:12px;text-align:center;padding:20px;">还没有联系人</div>' :
-                        contacts.map((c, idx) => {
-                            const av = c.avatar || '';
+                        contacts.map((c) => {
                             const displayName = (c.notes || c.name || '联系人').slice(0, 12);
-                            let avatarHtml;
-                            if (av && av.includes('<')) avatarHtml = `<div style="width:40px;height:40px;border-radius:8px;overflow:hidden;flex-shrink:0;">${av}</div>`;
-                            else if (av) avatarHtml = `<img data-avatar-idx="${idx}" style="width:40px;height:40px;border-radius:8px;object-fit:cover;flex-shrink:0;" alt="">`;
-                            else avatarHtml = `<div style="width:40px;height:40px;border-radius:8px;background:#ebdcff;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">👤</div>`;
                             return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f0e8f8;cursor:pointer;" data-nar-id="${c.id}">
-                                ${avatarHtml}<span style="font-size:14px;color:#4a3370;">${displayName}</span>
+                                <div style="width:40px;height:40px;border-radius:8px;overflow:hidden;flex-shrink:0;background:#ebdcff;display:flex;align-items:center;justify-content:center;font-size:18px;">${bcAvatarHtml(c.avatar)}</div>
+                                <span style="font-size:14px;color:#4a3370;">${displayName}</span>
                             </div>`;
                         }).join('')
-                    }
-                `;
+                    }`;
                 overlay.appendChild(sheet);
                 appPage.querySelector('.bc-page').appendChild(overlay);
-
-                (async () => {
-                    if (window.ImageDB) { try { await ImageDB.readyPromise; } catch(e){} }
-                    sheet.querySelectorAll('img[data-avatar-idx]').forEach(async img => {
-                        const c = contacts[parseInt(img.dataset.avatarIdx)];
-                        if (!c?.avatar) return;
-                        const av = c.avatar;
-                        try {
-                            if (av.startsWith('imgdb://') && window.ImageDB) {
-                                const url = await ImageDB.resolve(av); if (url) img.src = url;
-                            } else if (av.startsWith('data:') || av.startsWith('http')) img.src = av;
-                        } catch(e) {}
-                    });
-                })();
-
+                bcResolveAvatars(sheet);
                 sheet.querySelector('#bc-close').onclick = () => overlay.remove();
                 overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
                 sheet.querySelectorAll('[data-nar-id]').forEach(item => {
                     item.onclick = () => {
                         const c = contacts.find(x => x.id === item.dataset.narId);
                         if (!c) return;
-                        selectedNarrator = { id: c.id, name: c.notes || c.name, avatar: c.avatar || '', persona: c.persona || '' };
-                        const ab = appPage.querySelector('#bc-narrator-avatar');
-                        const av = selectedNarrator.avatar;
-                        if (av && av.includes('<')) {
-                            ab.innerHTML = `<div style="width:100%;height:100%;overflow:hidden;border-radius:8px;">${av}</div>`;
-                        } else if (av) {
-                            ab.innerHTML = `<img style="width:34px;height:34px;border-radius:8px;object-fit:cover;" alt="">`;
-                            const topImg = ab.querySelector('img');
-                            (async () => {
-                                if (window.ImageDB) { try { await ImageDB.readyPromise; } catch(e){} }
-                                if (av.startsWith('imgdb://') && window.ImageDB) {
-                                    const url = await ImageDB.resolve(av); if (url) topImg.src = url;
-                                } else if (av.startsWith('data:') || av.startsWith('http')) topImg.src = av;
-                            })();
-                        } else ab.textContent = '💄';
+                        selectedNarrator = { id: c.id, name: c.notes || c.name, persona: c.persona || '', avatar: c.avatar || '' };
                         appPage.querySelector('#bc-narrator-name').textContent = selectedNarrator.name;
-                        updateBtns();
+                        const ab = appPage.querySelector('#bc-narrator-avatar');
+                        ab.innerHTML = bcAvatarHtml(selectedNarrator.avatar);
+                        bcResolveAvatars(ab);
                         overlay.remove();
                     };
                 });
             };
 
-            // 动作按钮
-            appPage.querySelectorAll('.bc-action').forEach(btn => {
-                btn.onclick = async () => {
-                    if (!selectedNarrator) return;
-                    const act = btn.dataset.act;
-                    const skinList = data.skin.map(s => s.name).join('、') || '（柜子里没有护肤品）';
-                    const makeupList = data.makeup.map(s => s.name).join('、') || '（柜子里没有彩妆品）';
-                    const narName = selectedNarrator.name;
+            // —— 渲染结果（步骤卡 + 续聊）——
+            function renderResult(steps, label) {
+                sceneLabel = label;
+                let html = `<div class="bc-scene-title">${label} · 和 ${selectedNarrator.name} 一起</div>`;
+                steps.forEach((st, i) => {
+                    html += `<div class="bc-step"><div class="bc-step-no">${i+1}</div><div class="bc-step-text">${esc(st)}</div></div>`;
+                });
+                html += `<div id="bc-extra"></div>`;
+                html += `<div class="bc-followup on"><input type="text" id="bc-fu-input" placeholder="想跟 ${esc(selectedNarrator.name)} 说点什么…"><button id="bc-fu-go">说</button></div>`;
+                resultEl.innerHTML = html;
+                const fuInput = resultEl.querySelector('#bc-fu-input');
+                const fuGo = resultEl.querySelector('#bc-fu-go');
+                const sendFu = () => { const t = fuInput.value.trim(); if (!t) return; fuInput.value=''; followUp(t); };
+                fuGo.onclick = sendFu;
+                fuInput.onkeypress = (e) => { if (e.key==='Enter'){ e.preventDefault(); sendFu(); } };
+            }
+            function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-                    let task = '';
-                    if (act === 'ai-skin-me') task = `${narName} 现在帮用户做一套护肤流程。可用的护肤品：${skinList}。描述 ${narName} 给用户涂上每一步护肤品的过程，温柔的语气、画面感。`;
-                    else if (act === 'ai-make-me') task = `${narName} 现在帮用户化一个妆。可用的彩妆：${makeupList}。描述 ${narName} 给用户化妆的过程，细节、配色思路、最终效果。`;
-                    else if (act === 'me-skin-ai') task = `用户现在要给 ${narName} 做护肤（${narName} 是一个有形象的角色）。可用的护肤品：${skinList}。描述用户给 ${narName} 涂护肤品的过程，以及 ${narName} 的反应（撒娇、害羞、配合等）。`;
-                    else if (act === 'me-make-ai') task = `用户现在要给 ${narName} 化一个妆。可用的彩妆：${makeupList}。描述用户给 ${narName} 化妆的过程和 ${narName} 化好后的样子。`;
+            function listWithType(type) {
+                const items = data[type] || [];
+                if (!items.length) return `（柜子里还没有${type==='skin'?'护肤品':'彩妆'}）`;
+                return items.map(s => { const meta = [s.type, s.note].filter(Boolean).join('·'); return meta ? `${s.name}(${meta})` : s.name; }).join('、');
+            }
 
-                    const sysPrompt = `${selectedNarrator.persona ? `${narName} 的人设：${selectedNarrator.persona}\n\n` : ''}【任务】${task}\n\n【要求】80-150 字，温柔自然的语气，多用叠词，画面感强，可以提到柜子里具体的产品名字。回复格式：${narName}：（描述内容），直接输出，不要其他说明。`;
+            async function callAI(messages) {
+                const pPlat = localStorage.getItem('apiPlatform') || 'openai';
+                const ep = localStorage.getItem('apiEndpoint') || '';
+                const apiKey = localStorage.getItem('apiKey');
+                const model = localStorage.getItem('apiModel') || (pPlat === 'gemini' ? 'gemini-1.5-flash' : 'gpt-4o-mini');
+                if (!apiKey) throw new Error('请先在 API 设置里填好 key');
+                let msgs;
+                if (pPlat === 'gemini') {
+                    const merged = messages.map(m => (m.role==='system'?('【设定】'+m.content):(m.role==='user'?('我：'+m.content):('对方：'+m.content)))).join('\n');
+                    msgs = [{ role:'user', parts:[{ text: merged }] }];
+                } else { msgs = messages; }
+                const payload = ApiHandler.generateChatPayload(pPlat, ep, apiKey, model, msgs);
+                const resp = await fetch(payload.url, payload.options);
+                if (!resp.ok) throw new Error('生成失败');
+                const dataR = await resp.json();
+                return (ApiHandler.parseChatResponse(pPlat, dataR) || '').trim();
+            }
 
-                    const respEl = appPage.querySelector('#bc-response');
-                    respEl.classList.remove('empty');
-                    respEl.textContent = '...';
-                    appPage.querySelectorAll('.bc-action').forEach(b => b.disabled = true);
+            // —— 跑一个场景 ——
+            async function runScene(sc, customText) {
+                if (!selectedNarrator) { alert('先选一个陪你的 TA 吧～'); return; }
+                const narName = selectedNarrator.name;
+                const kind = sc ? sc.kind : 'skin';
+                const label = sc ? sc.label : '特别定制';
+                if (sc && !customText) {
+                    const need = sc.kind==='skin' ? data.skin.length : data.makeup.length;
+                    if (!need) { alert(`柜子里还没有${sc.kind==='skin'?'护肤品':'彩妆'}哦，先去下面的 ＋ 加几样～`); return; }
+                }
+                const skinL = listWithType('skin'), makeL = listWithType('makeup');
 
-                    try {
-                        const pPlat = localStorage.getItem('apiPlatform') || 'openai';
-                        const ep = localStorage.getItem('apiEndpoint') || '';
-                        const apiKey = localStorage.getItem('apiKey');
-                        const model = localStorage.getItem('apiModel') || (pPlat === 'gemini' ? 'gemini-1.5-flash' : 'gpt-4o-mini');
-                        if (!apiKey) throw new Error('请先在 API 设置里填好 key');
+                let task = '';
+                if (customText) {
+                    task = `用户的要求是：「${customText}」。请 ${narName} 用柜子里的东西温柔地满足。护肤区：${skinL}。彩妆区：${makeL}。`;
+                } else if (sc.onAI) {
+                    task = `用户现在要给 ${narName} 做【${label}】（${narName} 是有形象的角色）。可用的${kind==='skin'?'护肤品':'彩妆'}：${kind==='skin'?skinL:makeL}。描写用户给 ${narName} 一步步${kind==='skin'?'护肤':'化妆'}的过程，每步点出用的产品，并自然带上 ${narName} 的反应（撒娇、害羞、配合）。`;
+                } else {
+                    task = `${narName} 现在用柜子里的${kind==='skin'?'护肤品':'彩妆'}，温柔地帮用户做一套【${label}】。可用的产品（含类型）：${kind==='skin'?skinL:makeL}。请按合理的${kind==='skin'?'护肤':'上妆'}顺序，从柜子里挑出适合这个场景的，分成几步，每步点出用哪件、再温柔细腻地描写 ${narName} 给用户做这一步的画面。`;
+                }
+                const sys = `${selectedNarrator.persona?`${narName} 的人设：${selectedNarrator.persona}\n\n`:''}【任务】${task}\n\n【格式要求】把过程分成 3 到 6 步，每一步之间只用三个竖线 ||| 分隔（不要写"步骤几"、不要换行、不要编号）。每一步 25-45 字，温柔、多用叠词、画面感强，自然点到产品名。直接输出步骤，不要开场白和总结。`;
 
-                        let messages;
-                        if (pPlat === 'gemini') {
-                            messages = [{ role: 'user', parts: [{ text: `【系统指令：${sysPrompt}】` }] }];
-                        } else {
-                            messages = [{ role: 'system', content: sysPrompt }, { role: 'user', content: '开始吧' }];
-                        }
-                        const payload = ApiHandler.generateChatPayload(pPlat, ep, apiKey, model, messages);
-                        const resp = await fetch(payload.url, payload.options);
-                        if (!resp.ok) throw new Error('生成失败');
-                        const dataR = await resp.json();
-                        const text = ApiHandler.parseChatResponse(pPlat, dataR);
-                        respEl.textContent = text || '（空回复）';
-                    } catch (e) {
-                        respEl.textContent = '生成失败：' + e.message;
-                    }
-                    updateBtns();
-                };
-            });
+                resultEl.innerHTML = `<div class="bc-result-empty">${esc(narName)} 正在准备…💕</div>`;
+                try {
+                    const text = await callAI([{ role:'system', content: sys }, { role:'user', content: '开始吧～' }]);
+                    const steps = text.split('|||').map(x=>x.trim()).filter(Boolean);
+                    convo = [{ role:'assistant', content: text.replace(/\|\|\|/g,'\n') }];
+                    renderResult(steps.length?steps:[text||'（空回复）'], label);
+                } catch (e) {
+                    resultEl.innerHTML = `<div class="bc-result-empty">生成失败：${esc(e.message)}</div>`;
+                }
+            }
+
+            // —— 续聊 ——
+            async function followUp(text) {
+                const extra = resultEl.querySelector('#bc-extra');
+                if (extra) extra.insertAdjacentHTML('beforeend', `<div class="bc-bubble me">${esc(text)}</div>`);
+                const narName = selectedNarrator.name;
+                const sys = `${selectedNarrator.persona?`${narName} 的人设：${selectedNarrator.persona}\n\n`:''}你是 ${narName}，正在和用户进行【${sceneLabel}】，温柔地陪着 TA。自然地接着对话，2到4句，口语、多叠词，不要列表。`;
+                const msgs = [{ role:'system', content: sys }];
+                convo.forEach(m => msgs.push(m));
+                msgs.push({ role:'user', content: text });
+                convo.push({ role:'user', content: text });
+                if (extra) extra.insertAdjacentHTML('beforeend', `<div class="bc-bubble" id="bc-typing" style="opacity:0.5;">${esc(narName)} 正在回应…</div>`);
+                try {
+                    const reply = await callAI(msgs);
+                    const t = resultEl.querySelector('#bc-typing'); if (t) t.remove();
+                    convo.push({ role:'assistant', content: reply });
+                    if (extra) extra.insertAdjacentHTML('beforeend', `<div class="bc-bubble">${esc(reply)}</div>`);
+                } catch (e) {
+                    const t = resultEl.querySelector('#bc-typing'); if (t) t.textContent = '回应失败：'+e.message;
+                }
+            }
+
+            // —— 绑定场景 chips & 自由输入 ——
+            const scMap = {}; SCENARIOS.forEach(sc => scMap[sc.k] = sc);
+            appPage.querySelectorAll('.bc-chip').forEach(ch => ch.onclick = () => runScene(scMap[ch.dataset.sc], null));
+            const freeInput = appPage.querySelector('#bc-free-input');
+            const freeGo = appPage.querySelector('#bc-free-go');
+            const goFree = () => { const t = freeInput.value.trim(); if (!t){ freeInput.focus(); return; } runScene(null, t); };
+            freeGo.onclick = goFree;
+            freeInput.onkeypress = (e) => { if (e.key==='Enter'){ e.preventDefault(); goFree(); } };
 
             renderShelf('skin');
             renderShelf('makeup');
-            updateBtns();
         }
+
+
+        // ============ 共读：导入txt → app内阅读器 → 选段发给TA聊 → 回来接着读 ============
+        function setupCoReadApp(appPage) {
+            // ============ 共读：导入txt → app内阅读器 → 选段发给TA聊 → 回来接着读 ============
+            const BROWN = '#775C56', CREAM = '#FBF9F4', MINT = '#D5EBE4';
+            const esc = (s) => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            const contacts = (typeof DB!=='undefined' && DB.getContacts) ? DB.getContacts() : [];
+
+            let curId='', curContact=null, curBook='', curAuthor='', convo=[], curPassage='', passageCount=0, barExpanded=false;
+            let hasFile=false, curFullText='', readPos=0, readPage=0, _pages=null, pendingPassage=null, pickedFileText=null;
+            // 把整本书切成一页页（默认每页~1400字，尽量在段落处断开），只渲染当前页，避免一次性排版整本卡死
+            function paginate(text, size) {
+                size = size || 1400;
+                const pages = []; let i = 0; const n = (text||'').length;
+                while (i < n) {
+                    let end = Math.min(i + size, n);
+                    if (end < n) { const nl = text.indexOf('\n', end); if (nl !== -1 && nl - end < 400) end = nl + 1; }
+                    pages.push(text.slice(i, end)); i = end;
+                }
+                return pages.length ? pages : [''];
+            }
+
+            const goHome = () => { const ind = document.getElementById('app-home-indicator'); if (ind) ind.click(); else appPage.classList.remove('active'); };
+            const wireBack = (fn) => { const b = appPage.querySelector('.close-btn'); if (b) b.onclick = (fn||goHome); };
+
+            // —— 存储：记录(轻量, 双保险) + 书正文(单独key, 只导入时存一次) ——
+            const CR_LS_KEY = 'm-tea-coreads-v2';
+            const hasDBCoRead = !!(window.DB && DB.getCoReads && DB.saveCoRead);
+            const lsGet = () => { try { return JSON.parse(localStorage.getItem(CR_LS_KEY)||'{}'); } catch(e){ return {}; } };
+            const lsSet = (obj) => { try { localStorage.setItem(CR_LS_KEY, JSON.stringify(obj)); } catch(e){} };
+            const allRecords = () => { let out={}; if (hasDBCoRead){ try{ Object.assign(out, DB.getCoReads()||{}); }catch(e){} } Object.assign(out, lsGet()); return out; };
+            const bookKey = (id) => 'm-tea-coread-book__' + id;
+            const loadBookText = (id) => { try { return localStorage.getItem(bookKey(id)) || ''; } catch(e){ return ''; } };
+            function saveBookText(id, text) { try { localStorage.setItem(bookKey(id), text); return true; } catch(e){ return false; } }
+            const removeBookText = (id) => { try { localStorage.removeItem(bookKey(id)); } catch(e){} };
+            const makeId = (contactId, book) => `${contactId}__${book}`;
+            function persist() {
+                if (!curId) return;
+                const rec = { id:curId, contactId:(curContact&&curContact.id), contactName:(curContact?(curContact.notes||curContact.name):''), book:curBook, author:curAuthor, convo, curPassage, passageCount, hasFile, readPos, readPage, updatedAt: Date.now() };
+                if (hasDBCoRead) { try { DB.saveCoRead(rec); } catch(e){} }
+                const all = lsGet(); all[curId] = rec; lsSet(all);
+            }
+            function removeRecord(id) {
+                if (hasDBCoRead && DB.deleteCoRead) { try { DB.deleteCoRead(id); } catch(e){} }
+                const all = lsGet(); delete all[id]; lsSet(all);
+                removeBookText(id);
+            }
+            function fmtTime(t) {
+                if (!t) return '';
+                const d = new Date(t), now = new Date();
+                const sameDay = d.toDateString() === now.toDateString();
+                const hh = String(d.getHours()).padStart(2,'0'), mm = String(d.getMinutes()).padStart(2,'0');
+                return sameDay ? `今天 ${hh}:${mm}` : `${d.getMonth()+1}月${d.getDate()}日 ${hh}:${mm}`;
+            }
+
+            // —— 书架 ——
+            function renderShelf() {
+                const recs = Object.values(allRecords()).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+                const shelfHtml = recs.length ? `
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+                        ${recs.map(r=>`
+                            <div class="cr-rec" data-id="${esc(r.id)}" style="position:relative;cursor:pointer;text-align:center;">
+                                <div style="background:linear-gradient(160deg,#FFEFF1,#FAD7DD);border:1px solid #F3D3D8;border-radius:10px;aspect-ratio:3/4;display:flex;align-items:center;justify-content:center;font-size:34px;box-shadow:0 2px 6px rgba(119,92,86,0.12);">${r.hasFile?'📓':'📖'}</div>
+                                <div style="font-size:12px;color:${BROWN};font-weight:600;margin-top:6px;line-height:1.3;word-break:break-all;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${esc(r.book||'未命名')}</div>
+                                <div style="font-size:10px;color:#B89B95;margin-top:2px;">${r.hasFile?'📓 ':''}第${r.passageCount||0}段 · ${esc(r.contactName||'TA')}</div>
+                                <span class="cr-del" data-id="${esc(r.id)}" title="删除" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#fff;border:1px solid #EADED0;color:#D9A7A7;font-size:11px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,0.1);">✕</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : `<div style="text-align:center;padding:60px 20px;color:${BROWN};opacity:0.5;line-height:2;">书架还空着呢～<br>点右上角的 ＋ 开一本新书吧 📖</div>`;
+                appPage.innerHTML = `
+                    <div class="app-header">
+                        <span class="close-btn w-10 inline-block" style="color:${BROWN};cursor:pointer;">‹</span>
+                        <h2 class="font-bold" style="color:${BROWN};">书架 📚</h2>
+                        <span id="cr-new" style="color:${BROWN};font-size:24px;cursor:pointer;width:40px;text-align:right;padding-right:4px;line-height:1;">＋</span>
+                    </div>
+                    <div class="app-content p-4 pb-24" style="background:${CREAM}; overflow-y:auto;">
+                        ${contacts.length ? shelfHtml : `<div style="text-align:center;padding:50px 20px;color:${BROWN};opacity:0.5;line-height:2;">还没有联系人～<br>先去 520 添加一个，再来一起读书吧</div>`}
+                    </div>
+                `;
+                wireBack();
+                const nb = appPage.querySelector('#cr-new');
+                if (nb) nb.onclick = () => { if (!contacts.length) { alert('先去 520 添加一个联系人吧～'); return; } renderNew(); };
+                appPage.querySelectorAll('.cr-rec').forEach(el => {
+                    el.onclick = (e) => { if (e.target.classList.contains('cr-del')) return; const rec = allRecords()[el.dataset.id]; if (rec) loadRecord(rec); };
+                });
+                appPage.querySelectorAll('.cr-del').forEach(el => {
+                    el.onclick = (e) => { e.stopPropagation(); if (!confirm('从书架删掉这本？（聊天记录、导入的书都会一起删掉哦）')) return; removeRecord(el.dataset.id); renderShelf(); };
+                });
+            }
+
+            // —— 新建（可导入txt）——
+            function renderNew() {
+                pickedFileText = null;
+                appPage.innerHTML = `
+                    <div class="app-header">
+                        <span class="close-btn w-10 inline-block" style="color:${BROWN};cursor:pointer;">‹</span>
+                        <h2 class="font-bold" style="color:${BROWN};">开一本新书 📖</h2>
+                        <span class="w-10"></span>
+                    </div>
+                    <div class="app-content p-4 pb-24" style="background:${CREAM}; overflow-y:auto;">
+                        <div style="font-size:12px;color:#9A7872;line-height:1.7;background:#FBF6EE;border-radius:10px;padding:10px 12px;margin-bottom:14px;">
+                            导入一个 <b>.txt</b> 文件，就能在眠茶机里直接看书、选中一段发给 TA 聊～不导入也行，那就手动贴段落聊。<br>
+                            <b>📕 版权小提示</b>：请只导入公版书或你自己有权阅读的文件，别传播受版权保护的整本书哦。
+                        </div>
+                        <label style="color:${BROWN};font-size:12px;">和谁一起读</label>
+                        <select id="cr-contact" class="w-full mt-1 mb-3 p-2 rounded-lg" style="background:white;color:${BROWN};border:1px solid #E8D9D2;">
+                            ${contacts.map(c=>`<option value="${esc(String(c.id))}">${esc(c.notes||c.name)}</option>`).join('')}
+                        </select>
+                        <label style="color:${BROWN};font-size:12px;">导入 txt（可选）</label>
+                        <div class="mt-1 mb-3">
+                            <label for="cr-file" style="display:block;text-align:center;background:white;border:1px dashed #D9C7BE;border-radius:10px;padding:12px;color:#9A7872;font-size:13px;cursor:pointer;">📄 点这里选一个 .txt 文件</label>
+                            <input type="file" id="cr-file" accept=".txt,text/plain" style="display:none;">
+                            <div id="cr-file-name" style="font-size:11px;color:#B89B95;margin-top:5px;text-align:center;"></div>
+                        </div>
+                        <label style="color:${BROWN};font-size:12px;">书名</label>
+                        <input type="text" id="cr-book" placeholder="比如 小公主" class="w-full mt-1 mb-3 p-2 rounded-lg" style="background:white;color:${BROWN};border:1px solid #E8D9D2;outline:none;">
+                        <label style="color:${BROWN};font-size:12px;">作者（可选）</label>
+                        <input type="text" id="cr-author" placeholder="比如 弗朗西丝·霍奇森·伯内特" class="w-full mt-1 mb-4 p-2 rounded-lg" style="background:white;color:${BROWN};border:1px solid #E8D9D2;outline:none;">
+                        <button id="cr-start" class="w-full font-bold py-3 rounded-xl" style="background:${MINT};color:${BROWN};">开始共读 📖</button>
+                    </div>
+                `;
+                wireBack(renderShelf);
+                const fileInput = appPage.querySelector('#cr-file');
+                const fileName = appPage.querySelector('#cr-file-name');
+                const bookInput = appPage.querySelector('#cr-book');
+                fileInput.onchange = () => {
+                    const file = fileInput.files && fileInput.files[0];
+                    if (!file) { pickedFileText = null; fileName.textContent=''; return; }
+                    // 自动识别编码：BOM → UTF-8(严格) → GBK/GB18030 → 兜底
+                    const decodeBuffer = (buf) => {
+                        const b = new Uint8Array(buf);
+                        try {
+                            if (b.length>=3 && b[0]===0xEF && b[1]===0xBB && b[2]===0xBF) return new TextDecoder('utf-8').decode(buf);
+                            if (b.length>=2 && b[0]===0xFF && b[1]===0xFE) return new TextDecoder('utf-16le').decode(buf);
+                            if (b.length>=2 && b[0]===0xFE && b[1]===0xFF) return new TextDecoder('utf-16be').decode(buf);
+                        } catch(e){}
+                        try { return new TextDecoder('utf-8', { fatal:true }).decode(buf); }
+                        catch(e) {
+                            try { return new TextDecoder('gb18030').decode(buf); }
+                            catch(e2) { try { return new TextDecoder('utf-8').decode(buf); } catch(e3){ return ''; } }
+                        }
+                    };
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        try { pickedFileText = decodeBuffer(reader.result); }
+                        catch(e) { pickedFileText = ''; }
+                        fileName.textContent = `已选：${file.name}（${Math.round(file.size/1024)}KB）`;
+                        if (!bookInput.value.trim()) bookInput.value = file.name.replace(/\.[^.]+$/, '');
+                    };
+                    reader.onerror = () => { pickedFileText = null; fileName.textContent='读取文件失败，换个 txt 试试'; };
+                    reader.readAsArrayBuffer(file);
+                };
+                appPage.querySelector('#cr-start').onclick = () => {
+                    const cid = appPage.querySelector('#cr-contact').value;
+                    curContact = contacts.find(x => String(x.id) === String(cid));
+                    curBook = appPage.querySelector('#cr-book').value.trim();
+                    curAuthor = appPage.querySelector('#cr-author').value.trim();
+                    if (!curContact) { alert('先选一个一起读的 TA 吧～'); return; }
+                    if (!curBook) { alert('先给这本书起个名字吧～'); return; }
+                    curId = makeId(curContact.id, curBook);
+                    const existing = allRecords()[curId];
+                    if (pickedFileText != null) {
+                        // 导入模式：进阅读器
+                        convo = existing ? (existing.convo||[]) : [];
+                        curPassage = existing ? (existing.curPassage||'') : ''; passageCount = existing ? (existing.passageCount||0) : 0;
+                        hasFile = true; curFullText = pickedFileText; readPos = existing ? (existing.readPos||0) : 0; readPage = existing ? (existing.readPage||0) : 0; _pages = null; barExpanded=false;
+                        const ok = saveBookText(curId, curFullText);
+                        if (!ok) alert('书有点大，可能存不进本地（这次能正常看，但下次打开也许要重新导入）～');
+                        persist();
+                        renderReader();
+                    } else {
+                        if (existing) { loadRecord(existing); return; }
+                        hasFile = false; curFullText=''; readPos=0;
+                        convo = []; curPassage=''; passageCount=0; barExpanded=false;
+                        renderChat();
+                    }
+                };
+            }
+
+            function loadRecord(rec) {
+                curId = rec.id;
+                curContact = contacts.find(x => String(x.id) === String(rec.contactId)) || { id: rec.contactId, name: rec.contactName, notes:'' };
+                curBook = rec.book || ''; curAuthor = rec.author || '';
+                convo = Array.isArray(rec.convo) ? rec.convo.slice() : [];
+                curPassage = rec.curPassage || ''; passageCount = rec.passageCount || 0; barExpanded = false;
+                hasFile = !!rec.hasFile; readPos = rec.readPos || 0; readPage = rec.readPage || 0; _pages = null;
+                curFullText = hasFile ? loadBookText(curId) : '';
+                if (hasFile) renderReader(); else renderChat();
+            }
+
+            // —— 阅读器 ——
+            function renderReader() {
+                if (hasFile && !curFullText) curFullText = loadBookText(curId);
+                const missing = hasFile && !curFullText;
+                if (!_pages) _pages = paginate(curFullText || '', 1400);
+                const total = _pages.length;
+                if (readPage >= total) readPage = total - 1;
+                if (readPage < 0) readPage = 0;
+                appPage.innerHTML = `
+                    <div class="app-header" style="border-bottom:1px solid #F0E8E2;">
+                        <span class="close-btn w-10 inline-block" style="color:${BROWN};cursor:pointer;">‹</span>
+                        <h2 class="font-bold" style="color:${BROWN};font-size:15px;">《${esc(curBook)}》</h2>
+                        <span id="cr-tochat" style="color:${BROWN};font-size:13px;cursor:pointer;width:auto;padding-right:6px;white-space:nowrap;">💬 聊天</span>
+                    </div>
+                    <div id="cr-reader" class="chat-messages" style="background:${CREAM};padding:18px 18px 130px;font-size:16px;line-height:2;color:${BROWN};white-space:pre-wrap;word-break:break-word;">${missing ? '<div style="text-align:center;opacity:0.5;padding:40px 10px;line-height:2;">书的内容找不到了（可能换设备或清过数据）～<br>回书架删掉它、重新导入一次就好。</div>' : esc(_pages[readPage]||'')}</div>
+                    <div class="chat-footer" style="background:${CREAM};display:flex;flex-direction:column;gap:7px;padding:8px 12px calc(14px + env(safe-area-inset-bottom, 0px)) 12px;box-sizing:border-box;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:8px;">
+                            <button id="cr-prev" style="background:#FBF3E8;color:${BROWN};border:1px solid #EAD9C2;border-radius:16px;padding:7px 14px;font-size:13px;cursor:pointer;${readPage<=0?'opacity:0.4;':''}">‹ 上一页</button>
+                            <span style="font-size:12px;color:#B89B95;white-space:nowrap;">${total?readPage+1:0} / ${total}</span>
+                            <button id="cr-next" style="background:#FBF3E8;color:${BROWN};border:1px solid #EAD9C2;border-radius:16px;padding:7px 14px;font-size:13px;cursor:pointer;${readPage>=total-1?'opacity:0.4;':''}">下一页 ›</button>
+                        </div>
+                        <button id="cr-sel-chat" style="width:100%;background:${MINT};color:${BROWN};border:none;border-radius:18px;padding:10px;font-weight:600;font-size:14px;cursor:pointer;">💬 和 TA 聊选中的这段</button>
+                    </div>
+                `;
+                wireBack(() => { persist(); renderShelf(); });
+                appPage.querySelector('#cr-tochat').onclick = () => { persist(); renderChat(); };
+                const reader = appPage.querySelector('#cr-reader');
+                if (reader) requestAnimationFrame(() => { reader.scrollTop = 0; }); // 每页从头看
+                const prev = appPage.querySelector('#cr-prev');
+                const next = appPage.querySelector('#cr-next');
+                if (prev) prev.onclick = () => { if (readPage > 0) { readPage--; persist(); renderReader(); } };
+                if (next) next.onclick = () => { if (readPage < total - 1) { readPage++; persist(); renderReader(); } };
+                appPage.querySelector('#cr-sel-chat').onclick = () => {
+                    const sel = (window.getSelection ? window.getSelection().toString() : '').trim();
+                    if (!sel) { alert('先在上面用手指选中一段文字，再点这里和 TA 聊～'); return; }
+                    pendingPassage = sel.length > 1200 ? sel.slice(0,1200) : sel;
+                    persist();
+                    renderChat();
+                };
+            }
+
+            // —— 聊天 ——
+            function renderChat() {
+                const nm = curContact.notes || curContact.name;
+                const leftBack = () => { persist(); hasFile ? renderReader() : renderShelf(); };
+                appPage.innerHTML = `
+                    <div class="app-header" style="border-bottom:1px solid #F0E8E2;">
+                        <span class="close-btn w-10 inline-block" style="color:${BROWN};cursor:pointer;">‹</span>
+                        <h2 class="font-bold" style="color:${BROWN};font-size:15px;">${esc(nm)}${curBook?(' · 《'+esc(curBook)+'》'):''}</h2>
+                        <span id="cr-pause" style="color:${BROWN};font-size:12px;cursor:pointer;width:auto;padding-right:6px;white-space:nowrap;">${hasFile?'📓 看书':'⏸ 暂停'}</span>
+                    </div>
+                    <div id="cr-box" class="chat-messages" style="background:${CREAM};padding:12px 12px 90px 12px;">
+                        <div id="cr-bookbar"></div>
+                        <div id="cr-bubbles"></div>
+                    </div>
+                    <div class="chat-footer" style="background:${CREAM};display:flex;align-items:center;padding:8px 12px calc(18px + env(safe-area-inset-bottom, 0px)) 12px;box-sizing:border-box;">
+                        <input type="text" id="cr-input" placeholder="说想法… 或粘段原文点 📖 贴上" style="flex:1;min-width:0;border:none;background:white;border-radius:18px;padding:9px 14px;color:${BROWN};outline:none;">
+                        <button id="cr-quote-btn" title="把输入框里的原文贴上" style="flex-shrink:0;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#FBF3E8;color:${BROWN};border:1px solid #EAD9C2;font-size:16px;cursor:pointer;margin-left:8px;padding:0;line-height:1;">📖</button>
+                        <button id="cr-send" title="发送" style="flex-shrink:0;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:${MINT};color:${BROWN};border:none;font-size:17px;font-weight:700;cursor:pointer;margin-left:8px;padding:0;line-height:1;">➤</button>
+                    </div>
+                `;
+                wireBack(leftBack);
+                appPage.querySelector('#cr-pause').onclick = leftBack;
+                const box = appPage.querySelector('#cr-box');
+                const bubbles = appPage.querySelector('#cr-bubbles');
+                const input = appPage.querySelector('#cr-input');
+                const sendBtn = appPage.querySelector('#cr-send');
+                const quoteBtn = appPage.querySelector('#cr-quote-btn');
+
+                function updateBookBar() {
+                    const bar = appPage.querySelector('#cr-bookbar');
+                    if (!bar) return;
+                    const title = curBook ? ('《'+esc(curBook)+'》') : '正在读';
+                    if (!curPassage) {
+                        bar.innerHTML = `<div style="position:sticky;top:0;z-index:5;background:rgba(251,249,244,0.96);border:1px dashed #E4D6C4;border-radius:12px;padding:9px 12px;margin-bottom:10px;">
+                            <div style="font-size:12px;color:#B89B95;">📖 ${title} · 还没贴原文</div>
+                            <div style="font-size:11px;color:#C9BCB0;margin-top:3px;line-height:1.5;">${hasFile?'回📓看书选一段，或':''}把原文粘到下面输入框点 📖 贴上</div>
+                        </div>`;
+                        return;
+                    }
+                    bar.innerHTML = `<div id="cr-bar-inner" style="position:sticky;top:0;z-index:5;background:rgba(251,249,244,0.97);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);border:1px solid #EADED0;border-left:3px solid #E4C9A8;border-radius:12px;padding:9px 12px;margin-bottom:10px;cursor:pointer;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <span style="font-size:12px;color:#9A7872;font-weight:600;">📖 ${title} · 第 ${passageCount} 段</span>
+                            <span style="font-size:11px;color:#B89B95;">${barExpanded?'收起 ▴':'展开 ▾'}</span>
+                        </div>
+                        <div style="font-size:13px;color:${BROWN};line-height:1.7;margin-top:6px;white-space:pre-wrap;${barExpanded?'':'display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;'}">${esc(curPassage)}</div>
+                    </div>`;
+                    const inner = bar.querySelector('#cr-bar-inner');
+                    if (inner) inner.onclick = () => { barExpanded = !barExpanded; updateBookBar(); };
+                }
+
+                function renderBubbles() {
+                    bubbles.innerHTML = convo.map(m => {
+                        if (m.kind === 'passage') {
+                            return `<div style="margin:10px 0;display:flex;justify-content:center;">
+                                <div style="max-width:88%;background:#FBF3E8;border:1px solid #EADED0;border-left:3px solid #E4C9A8;border-radius:10px;padding:10px 13px;font-size:13px;color:#8A7568;line-height:1.75;white-space:pre-wrap;">"${esc(m.text)}"<div style="font-size:10px;color:#C2B2A2;margin-top:5px;text-align:right;">— 一起读的第 ${m.seg||''} 段</div></div>
+                            </div>`;
+                        }
+                        const me = m.role === 'user';
+                        return `<div class="message ${me?'sent':'received'}">
+                            <div class="message-bubble-wrapper" style="width:100%;align-items:${me?'flex-end':'flex-start'};">
+                                <div class="message-bubble ${me?'sent':'received'}" style="max-width:80%;width:fit-content;white-space:pre-wrap;">${esc(m.text)}</div>
+                            </div>
+                        </div>`;
+                    }).join('');
+                    box.scrollTop = box.scrollHeight;
+                }
+
+                updateBookBar();
+                renderBubbles();
+                persist();
+
+                async function doReply(isOpening) {
+                    sendBtn.disabled = true; quoteBtn.disabled = true; input.disabled = true;
+                    const typing = document.createElement('div');
+                    typing.style.cssText = 'color:'+BROWN+';opacity:0.5;font-size:12px;padding:4px 6px;';
+                    typing.textContent = isOpening ? (nm + ' 翻开了书…') : (nm + ' 正在想…');
+                    bubbles.appendChild(typing); box.scrollTop = box.scrollHeight;
+                    try {
+                        const reply = await callCoReadAI(isOpening);
+                        convo.push({ role:'assistant', text: reply });
+                        renderBubbles(); persist();
+                    } catch (e) {
+                        typing.remove();
+                        const err = document.createElement('div');
+                        err.style.cssText = 'color:#C26;font-size:13px;text-align:center;padding:8px;';
+                        err.textContent = e.message || '出错了，稍后再试';
+                        bubbles.appendChild(err);
+                    } finally {
+                        sendBtn.disabled = false; quoteBtn.disabled = false; input.disabled = false; input.focus();
+                    }
+                }
+                function sendChat() {
+                    const t = input.value.trim();
+                    if (!t) return;
+                    convo.push({ role:'user', text: t });
+                    input.value = ''; renderBubbles(); persist(); doReply();
+                }
+                function pastePassage() {
+                    const t = input.value.trim();
+                    if (!t) { alert('把要一起读的原文先粘到输入框里，再点 📖 哦～'); return; }
+                    curPassage = t; passageCount++;
+                    convo.push({ role:'user', kind:'passage', text: t, seg: passageCount });
+                    input.value = ''; updateBookBar(); renderBubbles(); persist(); doReply();
+                }
+                sendBtn.onclick = sendChat;
+                quoteBtn.onclick = pastePassage;
+                input.onkeypress = (e) => { if (e.key === 'Enter') { e.preventDefault(); sendChat(); } };
+
+                // 从阅读器选段进来 → 直接把这段作为书摘卡发出去
+                if (pendingPassage) {
+                    const t = pendingPassage; pendingPassage = null;
+                    curPassage = t; passageCount++;
+                    convo.push({ role:'user', kind:'passage', text: t, seg: passageCount });
+                    updateBookBar(); renderBubbles(); persist();
+                    doReply();
+                } else if (!convo.length) {
+                    doReply(true);
+                }
+            }
+
+            async function callCoReadAI(isOpening) {
+                const pPlat = localStorage.getItem('apiPlatform') || 'openai';
+                const ep = localStorage.getItem('apiEndpoint') || '';
+                const model = localStorage.getItem('apiModel') || 'gpt-3.5-turbo';
+                const apiKey = localStorage.getItem('apiKey');
+                if (!apiKey) throw new Error('请先去 API 设置里填好密钥');
+                const userNick = localStorage.getItem('user_nick') || '我';
+                const oppName = curContact.notes || curContact.name;
+                const bookTitle = curBook ? ('《'+curBook+'》') : '这本书';
+                const bookRef = bookTitle + (curAuthor ? ('（' + curAuthor + '）') : '');
+
+                let sys = `你是「${oppName}」。${curContact.persona?('人设：'+curContact.persona+'\n'):''}你正在和「${userNick}」一起读${bookRef}，像两个人捧着同一本书、翻一段聊一段。\n\n`;
+                if (curPassage) {
+                    sys += `【你们此刻正一起读的这一段原文】\n${curPassage}\n（聊的时候紧扣这一段，除非 TA 明显转开话题）\n\n`;
+                }
+                if (isOpening) {
+                    sys += `【现在是开场】：你们刚坐下来，要一起读${bookRef}。请你先开口——用你的人设口吻，温柔自然地招呼 ${userNick}，流露出和 TA 一起读这本书的期待；如果你对这本书或它的作者有印象，可以轻轻提一句你的感觉或好奇，再邀请 TA 说说读到哪儿了。2到4句，口语自然，像真的并肩坐下翻开书的那一刻。不要用列表，不要说"作为AI"。`;
+                } else {
+                    sys += `【共读要求】：\n`;
+                    sys += `1. 用你的人设口吻，像真的和 ${userNick} 并肩读这本书的人那样自然交流——分享你的看法、回应 TA 的感受、偶尔反问或抛出新角度，一起品味。\n`;
+                    sys += `2. 当 TA 贴出一段原文（标着【原文】），自然地对这段做出反应：你读到这段的感受、注意到的细节、想和 TA 讨论的点，像刚一起读到这儿。\n`;
+                    sys += `3. 这是"聊天"不是"讲课"：每次回应自然口语，2到5句即可，不要长篇大论、不要用列表或编号。\n`;
+                    sys += `4. 顺着 ${userNick} 刚说的话接，有来有回，可以有自己的观点、也可以被说服或一起发现新东西。\n`;
+                    sys += `5. 不要整段复述原文。不要说"作为AI"之类的话，就以 ${oppName} 的身份自然地聊。`;
+                }
+
+                let messages;
+                if (pPlat === 'gemini') {
+                    if (isOpening) {
+                        messages = [{ role:'user', parts:[{ text: sys + '\n\n（请你现在就先开口，说出开场那句话。）' }] }];
+                    } else {
+                        const hist = convo.map(m => {
+                            if (m.kind === 'passage') return `${userNick}贴了一段原文：「${m.text}」`;
+                            return `${m.role==='user'?userNick:oppName}：${m.text}`;
+                        }).join('\n');
+                        messages = [{ role:'user', parts:[{ text: sys + '\n\n以下是你们的共读对话：\n' + hist + '\n\n请以 '+oppName+' 的身份，自然地接着回应最后一条。' }] }];
+                    }
+                } else {
+                    messages = [{ role:'system', content: sys }];
+                    if (isOpening) {
+                        messages.push({ role:'user', content: '（我们刚翻开书，你先开口招呼我吧～）' });
+                    } else {
+                        convo.forEach(m => {
+                            if (m.role === 'user') {
+                                const content = m.kind === 'passage' ? `【原文】\n${m.text}` : m.text;
+                                messages.push({ role:'user', content });
+                            } else {
+                                messages.push({ role:'assistant', content: m.text });
+                            }
+                        });
+                    }
+                }
+                const payload = ApiHandler.generateChatPayload(pPlat, ep, apiKey, model, messages);
+                const resp = await fetch(payload.url, payload.options);
+                if (!resp.ok) throw new Error('API 请求失败 ('+resp.status+')');
+                const data = await resp.json();
+                const text = (ApiHandler.parseChatResponse(pPlat, data) || '').trim();
+                return text || (isOpening ? ('（' + oppName + '翻开书，温柔地看了你一眼…）') : ('（' + oppName + '若有所思地看着这一段…）'));
+            }
+
+            renderShelf();
+        }
+
+        async function callCoReadAI(isOpening) {
+                const pPlat = localStorage.getItem('apiPlatform') || 'openai';
+                const ep = localStorage.getItem('apiEndpoint') || '';
+                const model = localStorage.getItem('apiModel') || 'gpt-3.5-turbo';
+                const apiKey = localStorage.getItem('apiKey');
+                if (!apiKey) throw new Error('请先去 API 设置里填好密钥');
+                const userNick = localStorage.getItem('user_nick') || '我';
+                const oppName = curContact.notes || curContact.name;
+                const bookTitle = curBook ? ('《'+curBook+'》') : '这本书';
+                const bookRef = bookTitle + (curAuthor ? ('（' + curAuthor + '）') : '');
+
+                let sys = `你是「${oppName}」。${curContact.persona?('人设：'+curContact.persona+'\n'):''}你正在和「${userNick}」一起读${bookRef}，像两个人捧着同一本书、翻一段聊一段。\n\n`;
+                if (curPassage) {
+                    sys += `【你们此刻正一起读的这一段原文】\n${curPassage}\n（聊的时候紧扣这一段，除非 TA 明显转开话题）\n\n`;
+                }
+                if (isOpening) {
+                    sys += `【现在是开场】：你们刚坐下来，要一起读${bookRef}。请你先开口——用你的人设口吻，温柔自然地招呼 ${userNick}，流露出和 TA 一起读这本书的期待；如果你对这本书或它的作者有印象，可以轻轻提一句你的感觉或好奇，再邀请 TA 说说读到哪儿了。2到4句，口语自然，像真的并肩坐下翻开书的那一刻。不要用列表，不要说"作为AI"。`;
+                } else {
+                    sys += `【共读要求】：\n`;
+                    sys += `1. 用你的人设口吻，像真的和 ${userNick} 并肩读这本书的人那样自然交流——分享你的看法、回应 TA 的感受、偶尔反问或抛出新角度，一起品味。\n`;
+                    sys += `2. 当 TA 贴出一段原文（标着【原文】），自然地对这段做出反应：你读到这段的感受、注意到的细节、想和 TA 讨论的点，像刚一起读到这儿。\n`;
+                    sys += `3. 这是"聊天"不是"讲课"：每次回应自然口语，2到5句即可，不要长篇大论、不要用列表或编号。\n`;
+                    sys += `4. 顺着 ${userNick} 刚说的话接，有来有回，可以有自己的观点、也可以被说服或一起发现新东西。\n`;
+                    sys += `5. 不要整段复述原文。不要说"作为AI"之类的话，就以 ${oppName} 的身份自然地聊。`;
+                }
+
+                let messages;
+                if (pPlat === 'gemini') {
+                    if (isOpening) {
+                        messages = [{ role:'user', parts:[{ text: sys + '\n\n（请你现在就先开口，说出开场那句话。）' }] }];
+                    } else {
+                        const hist = convo.map(m => {
+                            if (m.kind === 'passage') return `${userNick}贴了一段原文：「${m.text}」`;
+                            return `${m.role==='user'?userNick:oppName}：${m.text}`;
+                        }).join('\n');
+                        messages = [{ role:'user', parts:[{ text: sys + '\n\n以下是你们的共读对话：\n' + hist + '\n\n请以 '+oppName+' 的身份，自然地接着回应最后一条。' }] }];
+                    }
+                } else {
+                    messages = [{ role:'system', content: sys }];
+                    if (isOpening) {
+                        messages.push({ role:'user', content: '（我们刚翻开书，你先开口招呼我吧～）' });
+                    } else {
+                        convo.forEach(m => {
+                            if (m.role === 'user') {
+                                const content = m.kind === 'passage' ? `【原文】\n${m.text}` : m.text;
+                                messages.push({ role:'user', content });
+                            } else {
+                                messages.push({ role:'assistant', content: m.text });
+                            }
+                        });
+                    }
+                }
+                const payload = ApiHandler.generateChatPayload(pPlat, ep, apiKey, model, messages);
+                const resp = await fetch(payload.url, payload.options);
+                if (!resp.ok) throw new Error('API 请求失败 ('+resp.status+')');
+                const data = await resp.json();
+                const text = (ApiHandler.parseChatResponse(pPlat, data) || '').trim();
+                return text || (isOpening ? ('（' + oppName + '翻开书，温柔地看了你一眼…）') : ('（' + oppName + '若有所思地看着这一段…）'));
+            }
 
         // ============ 美食地图 ============
         function setupGameHallApp(appPage) {
