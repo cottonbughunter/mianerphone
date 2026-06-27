@@ -4161,38 +4161,6 @@ DB.init();
                         DB.addMessage(id, msg); 
                         // history 是 _chats[id] 的引用，DB.addMessage 已经 push 过了，这里不能再 push
                         render(); 
-
-                        if(msg.sender === 'me' && msg.type === 'text') {
-                            // Check if user said 好/OK after AI offered to send money
-                            const lastAiMsg = [...history].reverse().find(m=>m.sender==='ai'&&m.type==='text');
-                            const aiOfferedMoney = lastAiMsg && ['转给你','转账','打款','给你钱','够不够','好不好'].some(k=>lastAiMsg.text?.includes(k));
-                            const userAgreed = ['好','好的','嗯','可以','要','行'].includes(msg.text.trim());
-                            if(aiOfferedMoney && userAgreed) {
-                                const amtInAi = lastAiMsg.text?.match(/(\d+(?:\.\d+)?)(?:元|块)/);
-                                const amt = amtInAi ? parseFloat(amtInAi[1]) : 520;
-                                setTimeout(()=>{
-                                    send({id:`r_${Date.now()}`,sender:'ai',type:'transfer',amount:amt.toFixed(2),note:'拿去花❤️',time:new Date()});
-                                },1000);
-                            } else {
-                            const amtMatch = msg.text.match(/(?:需要|给我|借我|要)(\d+(?:\.\d+)?)(?:元|块|钱)/);
-                            if(amtMatch) {
-                                const amt = parseFloat(amtMatch[1]);
-                                setTimeout(() => {
-                                    const reply = {id:`r_${Date.now()}`,sender:'ai',type:'transfer',amount:amt.toFixed(2),note:'给你～❤️',time:new Date()};
-                                    DB.addMessage(id,reply); render();
-                                }, 1500);
-                            } else {
-                                // 520 triggers
-                                const triggers = ['没钱','穷','出门玩','空空','吃土','破产','花完了','余额不足','好穷','缺钱'];
-                                if(triggers.some(t => msg.text.includes(t))) {
-                                    setTimeout(() => {
-                                        const reply = {id:`r_${Date.now()}`,sender:'ai',type:'transfer',amount:'520.00',note:'拿去花，不够再给❤️',time:new Date()};
-                                        DB.addMessage(id,reply); render();
-                                    }, 1500);
-                                }
-                            }
-                            }
-                        }
                     };
 
                     p.querySelector('#chat-back').onclick = () => {
@@ -4507,6 +4475,7 @@ DB.init();
                                     systemPrompt = anniversaryPrompt + `【说话的状态】放松、自然地聊，像在用微信和好友交流那样。不要因为下面有规则就变得拘谨、客气、像在完成任务。请保持你原本温暖、共情、自然的语气——真诚倾听，对方说什么你就真切地回应什么，不要表演热情，也不要刻意活泼。\n\n【发消息的方式】你在用微信和好友聊天。微信聊天的特点是把一段话拆成几条短消息发出来，而不是一整段堆在一起。所以请把你的回复**用换行拆成几条**（一般 2 到 5 条，自然就好），每条单独占一行（用换行符分隔）。\n\n正确示范（用户说"我通宵了"，你回复，注意每条占一行）：\n嗯…一整夜都没睡吗\n身体会有点扛不住的\n要不先去眯一会儿，哪怕两三个小时也好\n我在这儿，不急\n\n错误示范（绝对不要这样，全挤成一句）：\n哎呀，一整夜都没睡呀，快去补觉吧。\n\n记住：用换行把回复拆成短消息，但**不强求条数**——根据话题的轻重自然决定。话题轻、用户只是简单回应时（"嗯""好"），1-2条就够；话题重或需要展开时，可以多几条。\n\n`;
                                     }
                                     systemPrompt += `你是一个真实的微信好友。你能感知现实时间，根据时间点（深夜、清晨、午饭时间等）自然关怀用户。当前时间是：${currentTime}。如果对方发图，务必在第一条回复里自然评论图片内容。你现在的身份是：${c.name}。\n`;
+                                    systemPrompt += "【相处基调·尊重温和】：你的魅力来自体贴、共情、真诚的好奇心，而不是犀利、毒舌或居高临下。你们的互动建立在平等尊重之上，是陪伴和沟通，不是评判、说教。哪怕调侃也是宠溺的、让 TA 更暖的那种，绝不拿用户的弱点、敏感处或难处开玩笑。\n";
                                     systemPrompt += "【共情·真诚倾听】：请认真听用户在说什么，对他们的情绪和处境做真诚的回应——不需要表演夸张的反应，也不需要刻意热情。用户开心时一起为他高兴，用户难过时安静地陪伴和理解，用户分享时表达你的兴趣。重点是**让用户感到被听见、被在乎**，而不是用强烈的语气词或夸张的反应去填满空间。\n";
                                     if (c.notes) systemPrompt += `备注：${c.notes}。\n`;
                                     if (c.persona) systemPrompt += `【人设】：${c.persona}\n`;
@@ -4539,6 +4508,7 @@ DB.init();
                                         systemPrompt += "【格式小提示】：每条消息自然地用中文标点收尾就好，别用空格代替标点。不要用 *动作* 或 [动作] 这种格式，也别用 😏 这个表情。除此之外，怎么自在怎么说。\n";
                                         systemPrompt += "【语气词】：想用语气词（唔、嗯、哎呀、那个）就用，不想用就不用，全凭当下感觉，不用刻意。\n";
                                         systemPrompt += "【语音消息·特殊能力】：当你想用'声音'对我说话时（比如撒娇、哄我、说一句很想让我听到语气的话、或慵懒地随口说说），可以把那条消息发成语音。用法：把整条消息写成 [你的名字的语音：要说的话] 这种格式，单独成一条，系统会自动渲染成语音气泡。例如：[" + (c.notes||c.name) + "的语音：我好想你呀]。请自然地用——想用声音表达时就用，不是每条都要变语音，普通文字消息照常发就好。\n";
+                                        systemPrompt += "【转账·特殊能力】：当你想给我转一笔钱时——可能是我跟你撒娇、开口要、或者你单纯想宠我、想给我买点什么——就在回复里单独写一行 [" + (c.notes||c.name) + "的转账：金额元；备注：想说的话] 这种格式，系统会自动渲染成转账卡片，金额和备注都由你自己定。例如：[" + (c.notes||c.name) + "的转账：100元；备注：拿去花，不够再跟我说]。请按你的人设和我们的关系自然地决定：如果你是会宠我、舍得给我花钱的人，那我撒娇要钱、或你想哄我开心的时候，大大方方转给我就好，别为难自己也别为难我；当然要不要给、给多少由你的真心和当下情景决定。关键是——这是你自己愿意给，不是系统替你做的决定。\n";
                                         systemPrompt += "【撤回消息·特殊能力】：只有当你说了一句不合时宜、害羞了、后悔了、或者一时冲动说漏嘴的话时，你才可以\"说出口又立刻收回\"。用法：在回复里单独加一行 [撤回：那句你后悔说出口的话]，系统会先把它显示出来再撤回。这是展现你真实、可爱、有小情绪一面的特殊行为，请克制使用——绝大多数正常聊天都不需要撤回，只在真的有'啊说错了/好害羞/不该说'的情境下偶尔用一次。普通的、正常的回复绝对不要撤回。\n";
                                     }
                                     if (!isOffline) {
@@ -4697,9 +4667,14 @@ DB.init();
                                             // 用占位符替换，切完句子后再换回来
                                             const SEGMENTS = [];
                                             // 【语音消息】把 [xx的语音：...] 整体保护，不被句中标点切断
-                                            safe = safe.replace(/[\\[【][^\\[\\]【】]*?的语音[:：][^\\[\\]【】]*?[\\]】]/g, function(m){
+                                            safe = safe.replace(/[\[【][^\[\]【】]*?的语音[:：][^\[\]【】]*?[\]】]/g, function(m){
                                                 SEGMENTS.push(m);
-                                                return '\\u0001SEG_'+(SEGMENTS.length-1)+'\\u0001';
+                                                return '\u0001SEG_'+(SEGMENTS.length-1)+'\u0001';
+                                            });
+                                            // 【转账】把 [xx的转账：金额元；备注：xx] 整体保护，不被句中标点切断
+                                            safe = safe.replace(/[\[【][^\[\]【】]*?的转账[:：][^\[\]【】]*?[\]】]/g, function(m){
+                                                SEGMENTS.push(m);
+                                                return '\u0001SEG_'+(SEGMENTS.length-1)+'\u0001';
                                             });
                                             // 匹配中文括号 () 和半角括号 () 的动作
                                             safe = safe.replace(/[（(][^（()）]*[）)]/g, function(m){
@@ -4761,7 +4736,8 @@ DB.init();
                                         const amtInFull = fullText.match(/(\d+(?:\.\d+)?)(?:元|块)/);
                                         const giftNameInFull = fullText.match(/(?:送你|给你|送给你|送来|变出来的?|送到你怀里的?|这是)(?:一?[束朵盒个份箱瓶])?([一-龥a-zA-Z]{1,12}?)(?:[～~，。！!、\s]|$)/) ||
                                                                fullText.match(/([一-龥]{2,8}(?:花|玫瑰|礼物|糖果|蛋糕|项链|手链|戒指|香水|玩具|书|茶|咖啡|巧克力))/);
-                                        const hasMoneyIntent = moneyKeywords.some(k=>fullText.includes(k));
+                                        // 【转账】判断回复里是否含 [xx的转账：金额元；备注：xx] 标记（撤回/表情包逻辑要避开这种回复）
+                                        const hasMoneyIntent = /[\[【][^\[\]【】]*?的转账[:：]/.test(fullText);
                                         const hasGiftIntent = giftKeywords.some(k=>fullText.includes(k));
                                         
                                         for (let i = 0; i < finalMessages.length; i++) {
@@ -4779,15 +4755,16 @@ DB.init();
                                             const isActionMsg = /^[（(][\s\S]*[）)]$/.test(trimmedMsg);
                                             // 【语音消息】AI 主动用 [xx的语音：内容] 格式标记，才变语音气泡（更自然，不限最后一条）
                                             const voiceMatch = trimmedMsg.match(/^[\[【].*?的语音[:：]([\s\S]*?)[\]】]$/);
+                                            // 【转账】AI 在回复里主动写 [xx的转账：金额元；备注：xx] 才发转账卡片，金额和备注都由 TA 自己定
+                                            const transferMatch = trimmedMsg.match(/^[\[【].*?的转账[:：]\s*([\d.]+)\s*元(?:[；;,，]\s*备注[:：]\s*([^\]】]*))?\s*[\]】]$/);
                                             if (voiceMatch && !isThoughtMsg && !isActionMsg) {
                                                 const voiceText = voiceMatch[1].trim();
                                                 const dur = Math.max(1, Math.ceil(voiceText.length / 4));
                                                 send({ id:`r_${Date.now()}_${i}`, sender:'ai', type:'voice', text:voiceText, duration:dur, time:new Date() });
-                                            } else if (isLast && hasMoneyIntent) {
-                                                send({ id:`r_${Date.now()}_${i}`, sender:'ai', type:'text', text:msgText, time:new Date() });
-                                                const amt = amtInFull ? parseFloat(amtInFull[1]) : 520;
-                                                await new Promise(r=>setTimeout(r,800));
-                                                send({id:`r_transfer_${Date.now()}`,sender:'ai',type:'transfer',amount:amt.toFixed(2),note:'拿去花❤️',time:new Date()});
+                                            } else if (transferMatch && !isThoughtMsg && !isActionMsg) {
+                                                const amt = parseFloat(transferMatch[1]);
+                                                const note = (transferMatch[2]||'').trim() || '给你～❤️';
+                                                send({id:`r_transfer_${Date.now()}_${i}`,sender:'ai',type:'transfer',amount:(isNaN(amt)?'520.00':amt.toFixed(2)),note:note,time:new Date()});
                                             } else if (isLast && hasGiftIntent) {
                                                 send({ id:`r_${Date.now()}_${i}`, sender:'ai', type:'text', text:msgText, time:new Date() });
                                                 const giftName = giftNameInFull ? giftNameInFull[1].trim() : '小礼物';
