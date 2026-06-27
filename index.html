@@ -2357,7 +2357,7 @@ DB.init();
                                     <div style="font-size:22px;flex-shrink:0;">🌸</div>
                                     <div style="min-width:0;">
                                         <div style="font-size:13px;color:#775C56;font-weight:600;">月经记录</div>
-                                        <div style="font-size:10px;color:#9A7872;margin-top:1px;">让我也心疼你</div>
+                                        <div style="font-size:10px;color:#9A7872;margin-top:1px;">陪你度过这几天</div>
                                     </div>
                                 </div>
                                 <div class="hs-tab" data-tab="mood" style="padding:14px 12px;background:rgba(255,255,255,0.7);border-radius:14px;cursor:pointer;display:flex;align-items:center;gap:10px;">
@@ -8289,6 +8289,11 @@ DB.init();
                             </div>
                             <div style="font-size:12px;color:#775C56;line-height:1.5;">${item.name}</div>
                             ${item.aiReply ? `<div style="font-size:11px;color:#9A7872;line-height:1.5;margin-top:4px;font-style:italic;">"${item.aiReply}"</div>` : ''}`;
+                        } else if (item.type === 'letter') {
+                            inner = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                                <span style="font-size:11px;color:#fff;background:#E89B9B;padding:2px 8px;border-radius:8px;">💌 来信</span>
+                            </div>
+                            <div style="font-size:12px;color:#775C56;line-height:1.7;white-space:pre-wrap;">${(item.body || '').replace(/</g,'&lt;')}</div>`;
                         } else if (item.type === 'period') {
                             inner = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
                                 <span style="font-size:11px;color:#fff;background:#E89B9B;padding:2px 8px;border-radius:8px;">🌸 月经</span>
@@ -8983,6 +8988,14 @@ DB.init();
                         <div style="text-align:center;margin-top:20px;padding-bottom:14px;">
                             <span class="hs-habit-add" style="background:#D5EBE4;color:#775C56;padding:8px 22px;border-radius:14px;font-size:13px;cursor:pointer;display:inline-block;">+ 添加目标</span>
                         </div>
+                        ${(() => {
+                            const boxes = [];
+                            const gt = hsGet(c.id, 'guardTotal', 0) || 0;
+                            const lt = hsGet(c.id, 'lullabyTotal', 0) || 0;
+                            if (gt > 0) boxes.push(`<div style="margin:2px 4px 10px;background:linear-gradient(135deg,#FFF3F3,#FFE5E7);border:1px solid #FAD2D5;border-radius:14px;padding:14px;text-align:center;"><div style="font-size:11px;color:#B86E72;margin-bottom:4px;">🌙 娃娃们累计守护了你</div><div style="font-size:24px;font-weight:700;color:#E5807F;">${gt} <span style="font-size:13px;font-weight:400;">晚</span></div><div style="font-size:10px;color:#BA8488;margin-top:5px;">只增不减，断了也不会清零，安心哦～</div></div>`);
+                            if (lt > 0) boxes.push(`<div style="margin:2px 4px 10px;background:linear-gradient(135deg,#EAF3FB,#DCEBFA);border:1px solid #C9DEF2;border-radius:14px;padding:14px;text-align:center;"><div style="font-size:11px;color:#5B7BA0;margin-bottom:4px;">🌙 TA 累计哄你睡了</div><div style="font-size:24px;font-weight:700;color:#6E97C9;">${lt} <span style="font-size:13px;font-weight:400;">次</span></div><div style="font-size:10px;color:#8AA3C2;margin-top:5px;">只增不减，每被哄睡一次就 +1～</div></div>`);
+                            return boxes.length ? `<div style="margin-bottom:8px;">${boxes.join('')}</div>` : '';
+                        })()}
                     `;
                     
                     const listEl = body.querySelector('#hs-habit-list');
@@ -9534,7 +9547,7 @@ DB.init();
                             o.style.cssText = 'position:absolute;inset:0;background:rgba(0,0,0,0.4);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;border-radius:30px;';
                             o.innerHTML = `<div style="background:linear-gradient(135deg,#FFE5E5,#FFF);border-radius:16px;padding:22px 18px;max-width:260px;width:100%;box-shadow:0 8px 30px rgba(0,0,0,0.15);">
                                 <div style="text-align:center;font-size:42px;margin-bottom:10px;">💗</div>
-                                <div style="text-align:center;font-size:11px;color:#B89B95;letter-spacing:1px;margin-bottom:14px;">TA 心疼你</div>
+                                <div style="text-align:center;font-size:11px;color:#B89B95;letter-spacing:1px;margin-bottom:14px;">TA 陪着你</div>
                                 <div style="font-size:14px;color:#775C56;line-height:1.7;text-align:center;margin-bottom:18px;">${reply}</div>
                                 <div style="text-align:center;"><span class="o-close" style="background:#FFD3D4;color:#775C56;padding:6px 22px;border-radius:14px;font-size:12px;cursor:pointer;">嗯嗯 💕</span></div>
                             </div>`;
@@ -10039,7 +10052,7 @@ DB.init();
                             renderPhoneLog();
                         }
                         else if (appId === 'album') {
-                            appPage.innerHTML = `<div class="app-header-520"><span class="close-btn-520" id="album-back">‹</span><h2 class="title" style="position:absolute;left:50%;top:50%;transform:translateX(-50%);color:#775C56;">相册</h2><span></span></div><div class="app-content" id="album-grid" style="background:#FBF9F4;padding:8px;"></div><div id="album-viewer" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:999;flex-direction:column;align-items:center;justify-content:center;"><img id="album-big" style="max-width:90%;max-height:75%;border-radius:8px;object-fit:contain;"><div id="album-time" style="color:rgba(255,255,255,0.7);font-size:13px;margin-top:14px;"></div><div style="display:flex;gap:32px;margin-top:20px;"><button id="album-prev" style="background:rgba(255,255,255,0.15);border:none;color:white;font-size:22px;width:44px;height:44px;border-radius:50%;cursor:pointer;">‹</button><button id="album-close-btn" style="background:rgba(255,255,255,0.15);border:none;color:white;font-size:14px;padding:8px 16px;border-radius:20px;cursor:pointer;">关闭</button><button id="album-next" style="background:rgba(255,255,255,0.15);border:none;color:white;font-size:22px;width:44px;height:44px;border-radius:50%;cursor:pointer;">›</button></div></div>`;
+                            appPage.innerHTML = `<div class="app-header-520"><span class="close-btn-520" id="album-back">‹</span><h2 class="title" style="position:absolute;left:50%;top:50%;transform:translateX(-50%);color:#775C56;">相册</h2><span></span></div><div class="app-content" id="album-grid" style="background:#FBF9F4;padding:8px;"></div><div id="album-viewer" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:999;flex-direction:column;align-items:center;justify-content:center;"><img id="album-big" style="max-width:90%;max-height:75%;border-radius:8px;object-fit:contain;"><div id="album-time" style="color:rgba(255,255,255,0.7);font-size:13px;margin-top:14px;"></div><div style="display:flex;gap:20px;margin-top:20px;align-items:center;"><button id="album-prev" style="background:rgba(255,255,255,0.15);border:none;color:white;font-size:22px;width:44px;height:44px;border-radius:50%;cursor:pointer;">‹</button><button id="album-close-btn" style="background:rgba(255,255,255,0.15);border:none;color:white;font-size:14px;padding:8px 16px;border-radius:20px;cursor:pointer;">关闭</button><button id="album-del" style="background:rgba(255,255,255,0.15);border:none;color:#FF6B6B;font-size:14px;padding:8px 16px;border-radius:20px;cursor:pointer;">删除</button><button id="album-next" style="background:rgba(255,255,255,0.15);border:none;color:white;font-size:22px;width:44px;height:44px;border-radius:50%;cursor:pointer;">›</button></div><div id="album-confirm" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,0.55);align-items:center;justify-content:center;z-index:5;"><div style="background:linear-gradient(180deg,#FFFDF9,#FFF1F2);border-radius:18px;padding:22px 20px;width:230px;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,0.25);"><div style="font-size:14px;color:#9E5F62;font-weight:600;margin-bottom:6px;">删掉这张照片？</div><div style="font-size:11px;color:#BA8488;line-height:1.6;margin-bottom:16px;">聊天里的原图不受影响哦～</div><div style="display:flex;gap:8px;"><button id="album-del-no" style="flex:1;border:none;border-radius:13px;padding:10px;background:#fff;color:#BA8488;border:1px solid #FAD2D5;font-size:13px;cursor:pointer;">再想想</button><button id="album-del-yes" style="flex:1;border:none;border-radius:13px;padding:10px;background:#F7A8AC;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">删掉</button></div></div></div></div>`;
                             appPage.querySelector('#album-back').onclick = () => { appPage.innerHTML=''; appPage.classList.remove('active'); };
                             const album = JSON.parse(localStorage.getItem('chat_album')||'[]');
                             const gridEl = appPage.querySelector('#album-grid');
@@ -10075,21 +10088,38 @@ DB.init();
                                 const dx = e.changedTouches[0].clientX - touchStartX;
                                 if(Math.abs(dx) > 50) showPhoto(dx < 0 ? currentIdx+1 : currentIdx-1);
                             });
-                            if(!album.length) { gridEl.innerHTML='<div style="text-align:center;padding:40px;color:#775C56;opacity:0.5;">暂无照片</div>'; }
-                            else {
+                            const persistAlbum = () => { try { localStorage.setItem('chat_album', JSON.stringify(album)); } catch(e){} };
+                            const renderGrid = () => {
+                                if(!album.length) { gridEl.innerHTML='<div style="text-align:center;padding:40px;color:#775C56;opacity:0.5;">暂无照片</div>'; return; }
                                 const groups = {};
                                 album.forEach(ph => { const d=new Date(ph.time).toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric'}); if(!groups[d])groups[d]=[]; groups[d].push(ph); });
                                 const allPhotos = album;
                                 gridEl.innerHTML = Object.entries(groups).map(([date,photos])=>`
                                     <div style="margin-bottom:12px;"><div style="font-size:12px;color:#775C56;opacity:0.7;padding:6px 4px;">${date}</div>
                                     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px;">${photos.map(ph=>{const idx=allPhotos.indexOf(ph);return`<img data-idx="${idx}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:4px;cursor:pointer;background:#eee;">`;}).join('')}</div></div>`).join('');
-                                // 异步加载缩略图（支持 imgdb://）
                                 gridEl.querySelectorAll('img[data-idx]').forEach(async img => {
                                     const idx = parseInt(img.dataset.idx);
                                     img.src = await resolveSrc(allPhotos[idx].src);
                                     img.onclick = () => { showPhoto(idx); };
                                 });
-                            }
+                            };
+                            renderGrid();
+                            const delBtn = appPage.querySelector('#album-del');
+                            const delConfirm = appPage.querySelector('#album-confirm');
+                            const doDelete = () => {
+                                if (!album.length) return;
+                                album.splice(currentIdx, 1);
+                                persistAlbum();
+                                if (delConfirm) delConfirm.style.display = 'none';
+                                if (!album.length) { viewer.style.display='none'; renderGrid(); return; }
+                                renderGrid();
+                                showPhoto(Math.min(currentIdx, album.length-1));
+                            };
+                            if (delBtn) delBtn.onclick = () => { if (album.length && delConfirm) delConfirm.style.display = 'flex'; };
+                            const delNo = appPage.querySelector('#album-del-no');
+                            const delYes = appPage.querySelector('#album-del-yes');
+                            if (delNo) delNo.onclick = () => { delConfirm.style.display = 'none'; };
+                            if (delYes) delYes.onclick = doDelete;
                         }
                     }
 
@@ -10664,7 +10694,7 @@ const ApiHandler = {
                 .lullaby-stars { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
                 .lullaby-star { position: absolute; background: white; border-radius: 50%; opacity: 0.6; animation: lullaby-twinkle 3s infinite alternate; }
                 @keyframes lullaby-twinkle { 0%{opacity:0.3;} 100%{opacity:0.9;} }
-                .lullaby-header { position: relative; padding: max(32px, env(safe-area-inset-top, 32px)) 16px 16px; display: flex; align-items: center; justify-content: space-between; z-index: 1; }
+                .lullaby-header { position: relative; padding: 32px 16px 16px; display: flex; align-items: center; justify-content: space-between; z-index: 1; }
                 .lullaby-back { font-size: 28px; cursor: pointer; color: #f0e6ff; width: 30px; }
                 .lullaby-title { font-size: 18px; font-weight: 500; letter-spacing: 2px; }
                 .lullaby-body { padding: 8px 22px 16px; position: relative; z-index: 1; }
@@ -10892,8 +10922,27 @@ const ApiHandler = {
                 appPage.querySelector('#lullaby-setup').style.display = 'none';
                 appPage.querySelector('#lullaby-read-screen').classList.add('active');
                 appPage.querySelector('#lullaby-narrator-mini').textContent = `${selectedNarrator.emoji} ${selectedNarrator.name}　·　${selectedType.name}`;
+                if (selectedNarrator && selectedNarrator.type === 'contact' && selectedNarrator.id) lullabyCheckin(selectedNarrator.id);
                 streamLullaby(true);
             };
+
+            // 晚安打卡：写进心跳同频「一起打卡」，并累计哄睡次数（只增不减）
+            function lullabyCheckin(cid) {
+                if (!cid) return;
+                const hsKL = (k) => 'hs_' + cid + '_' + k;
+                try {
+                    const raw = localStorage.getItem(hsKL('healthHabits'));
+                    const habits = raw ? JSON.parse(raw) : [];
+                    let h = habits.find(x => x._lullaby || x.name === '晚安');
+                    const today = new Date().toISOString().slice(0,10);
+                    if (!h) { h = { id: 'h_' + Date.now(), emoji: '🌙', name: '晚安', history: [], created: new Date().toISOString(), _lullaby: true }; habits.push(h); }
+                    else if (h.emoji === '🌛') { h.emoji = '🌙'; }
+                    if (!h.history) h.history = [];
+                    if (!h.history.includes(today)) h.history.push(today);
+                    localStorage.setItem(hsKL('healthHabits'), JSON.stringify(habits));
+                    try { const n = parseInt(localStorage.getItem(hsKL('lullabyTotal')) || '0', 10) || 0; localStorage.setItem(hsKL('lullabyTotal'), String(n + 1)); } catch(e) {}
+                } catch(e) {}
+            }
 
             let lullabyHistory = [];
             async function streamLullaby(isFirst) {
@@ -11334,11 +11383,14 @@ const ApiHandler = {
             <style>
                 .hug-page { background: linear-gradient(180deg, #FFF0F1 0%, #FFE3E4 50%, #FFD3D4 100%); min-height: 100%; color: #9E5F62; padding-bottom: 20px; overflow-y: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
                 .hug-page::-webkit-scrollbar { display: none; }
-                .hug-header { padding: max(32px, env(safe-area-inset-top, 32px)) 16px 10px; display: flex; align-items: center; justify-content: space-between; }
+                .hug-header { padding: 32px 16px 10px; display: flex; align-items: center; justify-content: space-between; }
                 .hug-back { font-size: 26px; cursor: pointer; color: #F0989B; width: 30px; }
                 .hug-title { font-size: 17px; font-weight: 600; color: #F0989B; }
                 /* 娃柜 */
                 .hug-cabinet-label { font-size: 12px; color: #aaa; margin: 0 20px 6px; }
+                #hug-letter-banner { margin: 0 20px 12px; }
+                .hug-letter-card { background: linear-gradient(135deg,#FFF1F1,#FFE2E4); border: 1px solid #FAD2D5; border-radius: 14px; padding: 12px 14px; font-size: 13px; font-weight: 600; color: #B86E72; cursor: pointer; box-shadow: 0 2px 10px rgba(240,152,155,0.12); }
+                .hug-letter-sub { font-size: 11px; font-weight: 400; color: #BA8488; margin-top: 4px; }
                 .hug-cabinet { display: flex; gap: 10px; padding: 0 20px 4px; overflow-x: auto; scrollbar-width: none; }
                 .hug-cabinet::-webkit-scrollbar { display: none; }
                 .hug-cabinet-item { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; }
@@ -11347,6 +11399,7 @@ const ApiHandler = {
                 .hug-cabinet-thumb.selected { border-color: #F0989B; }
                 .hug-cabinet-thumb.add-btn { border: 2px dashed rgba(240,152,155,0.45); color: #F0989B; font-size: 22px; }
                 .hug-cabinet-name { font-size: 10px; color: #BA8488; max-width: 54px; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+                .hug-cabinet-del { position: absolute; top: 2px; right: 2px; width: 17px; height: 17px; border-radius: 50%; background: #fff; border: 1px solid #F3D3D8; color: #E59398; font-size: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.14); cursor: pointer; z-index: 3; }
                 /* 舞台 */
                 .hug-stage { margin: 8px 20px 10px; background: rgba(255,255,255,0.6); backdrop-filter: blur(10px); border-radius: 16px; padding: 16px 20px; text-align: center; box-shadow: 0 6px 20px rgba(240,152,155,0.12); display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 180px; }
                 .hug-toy-img { width: 130px; height: 130px; border-radius: 14px; object-fit: cover; box-shadow: 0 4px 16px rgba(0,0,0,0.1); cursor: pointer; display: block; aspect-ratio: 1/1; }
@@ -11355,20 +11408,31 @@ const ApiHandler = {
                 .hug-toy-name-row { margin-top: 8px; display: flex; align-items: center; gap: 6px; }
                 .hug-toy-name-input { background: transparent; border: none; border-bottom: 1px dashed rgba(0,0,0,0.15); font-size: 14px; text-align: center; color: #9E5F62; outline: none; width: 100px; }
                 .hug-toy-delete { font-size: 12px; color: #ccc; cursor: pointer; padding: 2px 4px; }
+                .hug-toy-persona-input { margin-top: 6px; background: rgba(255,255,255,0.7); border: 1px solid rgba(240,152,155,0.25); border-radius: 10px; font-size: 11px; text-align: center; color: #9E5F62; outline: none; width: 200px; max-width: 80%; padding: 5px 8px; }
+                .hug-toy-persona-input::placeholder { color: #d3b3b5; }
                 /* 联系人行 */
                 .hug-narrator-row { background: rgba(255,255,255,0.6); border: 1px solid rgba(240,152,155,0.20); border-radius: 16px; padding: 10px 14px; margin: 0 20px 10px; display: flex; align-items: center; gap: 10px; cursor: pointer; }
                 .hug-narrator-avatar { width: 34px; height: 34px; border-radius: 8px; background: rgba(240,152,155,0.20); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; overflow: hidden; }
                 .hug-narrator-info { flex: 1; min-width: 0; }
                 .hug-narrator-label { font-size: 10px; color: #aaa; margin-bottom: 1px; }
                 .hug-narrator-name { font-size: 13px; font-weight: 500; color: #9E5F62; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-                .hug-response { margin: 0 20px 10px; background: white; border-radius: 16px; padding: 12px 16px; font-size: 13px; line-height: 1.75; color: #5d4848; min-height: 48px; box-shadow: 0 2px 10px rgba(0,0,0,0.04); white-space: pre-wrap; }
-                .hug-response.empty { color: #aaa; font-style: italic; text-align: center; opacity: 0.7; }
+                .hug-feed { margin: 0 20px 8px; display: flex; flex-direction: column; gap: 7px; max-height: 320px; overflow-y: auto; scrollbar-width: none; }
+                .hug-feed::-webkit-scrollbar { display: none; }
+                .hug-feed-empty { background: white; border-radius: 16px; padding: 14px; font-size: 12px; color: #aaa; font-style: italic; text-align: center; opacity: 0.75; box-shadow: 0 2px 10px rgba(0,0,0,0.04); }
+                .hug-msg { max-width: 82%; padding: 9px 13px; border-radius: 14px; font-size: 13px; line-height: 1.7; white-space: pre-wrap; box-shadow: 0 2px 8px rgba(240,152,155,0.08); }
+                .hug-msg.ai { align-self: flex-start; background: white; color: #5d4848; }
+                .hug-msg.user { align-self: flex-end; background: #F7A8AC; color: #fff; border: 1px solid #F0989B; box-shadow: 0 2px 8px rgba(240,152,155,0.25); }
+                .hug-typing { align-self: flex-start; font-size: 12px; color: #BA8488; opacity: 0.7; padding: 4px 6px; }
+                .hug-followup { display: flex; gap: 7px; margin: 0 20px 14px; }
+                .hug-followup input { flex: 1; min-width: 0; border: none; background: white; border-radius: 14px; padding: 9px 12px; font-size: 12px; color: #9E5F62; outline: none; box-shadow: 0 1px 4px rgba(240,152,155,0.08); }
+                .hug-followup button { flex-shrink: 0; border: none; background: #F0989B; color: white; width: 40px; height: 40px; border-radius: 50%; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 600; cursor: pointer; }
+                .hug-followup button:disabled { opacity: 0.45; }
                 .hug-actions-title { font-size: 13px; color: #999; margin: 4px 24px 6px; }
                 .hug-actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 0 20px 10px; }
                 .hug-action-btn { background: white; border: none; padding: 11px 10px; border-radius: 14px; font-size: 13px; color: #9E5F62; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: all 0.15s; }
                 .hug-action-btn:active { transform: scale(0.96); background: #FFF0F1; }
                 .hug-action-btn:disabled { opacity: 0.4; cursor: default; }
-                .hug-action-btn.surprise { grid-column: span 2; background: linear-gradient(135deg, #FFD3D4, #F0989B); color: white; }
+                .hug-action-btn.surprise { grid-column: span 2; background: #FFEAEC; color: #E5807F; border: 1px solid #FAD2D5; font-weight: 600; }
                 .hug-action-btn.surprise:disabled { background: #ddd; }
                 .hug-options-block { background: rgba(255,255,255,0.55); border-radius: 16px; padding: 12px 14px; margin: 0 20px 14px; }
                 .hug-options-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
@@ -11377,6 +11441,43 @@ const ApiHandler = {
                 .hug-option.custom-input { padding: 0; border: 1px solid #F0989B; background: white; }
                 .hug-option.custom-input input { border: none; outline: none; padding: 5px 11px; background: transparent; font-size: 12px; width: 90px; color: #9E5F62; }
                 .hug-options-label { font-size: 12px; color: #888; font-weight: 500; }
+                .hug-profile { display: flex; flex-direction: column; align-items: center; width: 100%; }
+                .hug-profile-avatar { width: 120px; height: 120px; border-radius: 16px; object-fit: cover; box-shadow: 0 4px 16px rgba(0,0,0,0.1); cursor: pointer; }
+                .hug-profile-avatar.ph { display: flex; align-items: center; justify-content: center; font-size: 46px; background: rgba(255,255,255,0.7); border: 2px dashed rgba(240,152,155,0.4); color: #F0989B; }
+                .hug-profile-name { font-size: 16px; font-weight: 600; color: #9E5F62; margin-top: 10px; }
+                .hug-profile-meta { font-size: 11px; color: #BA8488; margin-top: 3px; text-align: center; line-height: 1.5; }
+                .hug-profile-persona { font-size: 12px; color: #9E5F62; background: rgba(255,255,255,0.55); border-radius: 10px; padding: 6px 12px; margin-top: 8px; max-width: 90%; text-align: center; line-height: 1.6; }
+                .hug-profile-edit { margin-top: 11px; background: rgba(255,255,255,0.8); border: 1px solid rgba(240,152,155,0.3); color: #E5807F; border-radius: 14px; padding: 6px 16px; font-size: 12px; cursor: pointer; }
+                .hug-editor-mask { position: absolute; inset: 0; background: linear-gradient(180deg,#FFF0F1,#FFE3E4); z-index: 1200; overflow-y: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+                .hug-editor-mask::-webkit-scrollbar { display: none; }
+                .hug-editor { padding: 0 22px 40px; }
+                .hug-editor-head { padding: 30px 0 14px; display: flex; align-items: center; justify-content: space-between; }
+                .hug-editor-head .he-back { font-size: 24px; color: #F0989B; cursor: pointer; }
+                .hug-editor-head .he-title { font-size: 16px; font-weight: 600; color: #F0989B; }
+                .hug-editor-avatar-wrap { display: flex; flex-direction: column; align-items: center; margin-bottom: 18px; }
+                .hug-editor-avatar { width: 110px; height: 110px; border-radius: 16px; object-fit: cover; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.1); background-size: cover; background-position: center; }
+                .hug-editor-avatar.ph { display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(255,255,255,0.7); border: 2px dashed rgba(240,152,155,0.45); color: #F0989B; }
+                .hug-editor-avatar-hint { font-size: 11px; color: #C99; margin-top: 6px; }
+                .hug-field { margin-bottom: 14px; }
+                .hug-field label { display: block; font-size: 12px; color: #A87B7E; margin-bottom: 5px; }
+                .hug-field input, .hug-field textarea { width: 100%; border: 1px solid rgba(240,152,155,0.3); background: #fff; border-radius: 12px; padding: 10px 12px; font-size: 13px; color: #9E5F62; outline: none; box-sizing: border-box; font-family: inherit; }
+                .hug-field textarea { resize: none; line-height: 1.6; }
+                .hug-editor-btns { display: flex; gap: 10px; margin-top: 22px; }
+                .hug-editor-btns button { flex: 1; border: none; border-radius: 14px; padding: 12px; font-size: 14px; font-weight: 600; cursor: pointer; }
+                .hug-save-btn { background: linear-gradient(135deg,#FFD3D4,#F0989B); color: #fff; }
+                .hug-del-btn { background: #fff; color: #E5807F; border: 1px solid rgba(240,152,155,0.4) !important; }
+                .hug-night { margin: 0 20px 12px; background: rgba(255,255,255,0.55); border: 1px solid rgba(240,152,155,0.18); border-radius: 16px; padding: 12px 14px; }
+                .hug-night-head { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 600; color: #B86E72; }
+                .hug-night-hist { font-size: 11px; color: #C99; font-weight: 400; cursor: pointer; }
+                .hug-night-body { margin-top: 8px; }
+                .hug-night-hint { font-size: 11px; color: #BA8488; line-height: 1.6; }
+                .hug-night-btn { width: 100%; margin-top: 9px; background: linear-gradient(135deg,#FFE0E2,#FFC4C7); color: #B05C60; border: none; border-radius: 14px; padding: 10px; font-size: 13px; font-weight: 600; cursor: pointer; }
+                .hug-night-btn.ghost { background: rgba(255,255,255,0.7); color: #BA8488; border: 1px solid #FAD2D5; }
+                .hug-night-when { font-size: 12px; color: #9E5F62; font-weight: 600; margin-bottom: 7px; }
+                .hug-night-task { display: flex; gap: 8px; align-items: flex-start; background: #fff; border-radius: 10px; padding: 8px 10px; margin-bottom: 6px; }
+                .hug-night-toy { flex-shrink: 0; font-size: 12px; font-weight: 600; color: #E5807F; }
+                .hug-night-do { font-size: 12px; color: #6d5550; line-height: 1.5; }
+                .hug-night-report { background: #FFF6E9; border: 1px solid #F5E2C8; border-radius: 10px; padding: 9px 11px; font-size: 12px; color: #8a6a4a; line-height: 1.65; margin-top: 6px; }
             </style>
             <div class="hug-page">
                 <div class="hug-header">
@@ -11384,14 +11485,11 @@ const ApiHandler = {
                     <span class="hug-title">虚拟抱抱</span>
                     <span style="width:30px;"></span>
                 </div>
+                <div id="hug-letter-banner" style="display:none;"></div>
                 <div class="hug-cabinet-label">我的娃柜</div>
                 <div class="hug-cabinet" id="hug-cabinet"></div>
                 <div class="hug-stage">
                     <div id="hug-toy-container"></div>
-                    <div class="hug-toy-name-row" id="hug-toy-name-wrap" style="display:none;">
-                        <input type="text" class="hug-toy-name-input" id="hug-toy-name" placeholder="给TA起个名字" maxlength="10">
-                        <span class="hug-toy-delete" id="hug-toy-delete" title="删除这个娃">🗑</span>
-                    </div>
                 </div>
                 <div class="hug-narrator-row" id="hug-narrator-row">
                     <div class="hug-narrator-avatar" id="hug-narrator-avatar">🧸</div>
@@ -11401,16 +11499,22 @@ const ApiHandler = {
                     </div>
                     <span style="color:#ccc;font-size:16px;">›</span>
                 </div>
-                <div class="hug-response empty" id="hug-response">先选娃娃和陪玩的人，再点下面的动作～</div>
-                <div class="hug-actions-title">想做什么呢？</div>
+                <div class="hug-response empty" id="hug-response" style="display:none;"></div>
+                <div class="hug-night" id="hug-night"></div>
+                <div class="hug-actions-title">想让 TA 陪它做什么？</div>
                 <div class="hug-actions">
-                    <button class="hug-action-btn" data-act="touch" disabled>摸摸头 🫧</button>
-                    <button class="hug-action-btn" data-act="hug" disabled>抱抱 🤗</button>
-                    <button class="hug-action-btn" data-act="clothes" disabled>换衣服 👗</button>
-                    <button class="hug-action-btn" data-act="food" disabled>喂零食 🍪</button>
-                    <button class="hug-action-btn surprise" data-act="surprise" disabled>你来选吧 ✨</button>
+                    <button class="hug-action-btn" data-act="hug" disabled>抱抱它 🤗</button>
+                    <button class="hug-action-btn" data-act="touch" disabled>摸摸它 🫧</button>
+                    <button class="hug-action-btn" data-act="clothes" disabled>给它换装 👗</button>
+                    <button class="hug-action-btn" data-act="food" disabled>喂它吃 🍪</button>
+                    <button class="hug-action-btn surprise" data-act="surprise" disabled>TA 随心 ✨</button>
                 </div>
                 <div class="hug-options-block" id="hug-options-block" style="display:none;"></div>
+                <div class="hug-feed" id="hug-feed"></div>
+                <div class="hug-followup" id="hug-followup">
+                    <input type="text" id="hug-fu-input" placeholder="指挥或回应 TA…（比如 让它陪小熊睡个午觉）">
+                    <button id="hug-fu-send">➤</button>
+                </div>
             </div>`;
 
             const HUG_KEY = 'virtual_hug_data_v2';
@@ -11422,7 +11526,198 @@ const ApiHandler = {
 
             let data = loadData();
             if (!data.toys) data.toys = [];
+            if (!data.nightHistory) data.nightHistory = [];
             let selectedNarrator = null;
+            const hugEsc = (s) => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+            function renderFeed() {
+                const feed = appPage.querySelector('#hug-feed');
+                if (!feed) return;
+                const toy = getCurrentToy();
+                const fu = appPage.querySelector('#hug-followup');
+                const ready = !!(toy && toy.imageRef && selectedNarrator);
+                if (fu) { const inp = fu.querySelector('#hug-fu-input'), sd = fu.querySelector('#hug-fu-send'); if (inp) inp.disabled = !ready; if (sd) sd.disabled = !ready; }
+                if (!toy || !toy.imageRef) { feed.innerHTML = `<div class="hug-feed-empty">先上传一只娃娃、再选个陪玩的 TA～</div>`; return; }
+                const log = toy.log || [];
+                if (!log.length) {
+                    const who = selectedNarrator ? selectedNarrator.name : '陪玩的 TA';
+                    feed.innerHTML = `<div class="hug-feed-empty">点上面的动作，让 ${hugEsc(who)} 陪 ${hugEsc(toy.name||'娃娃')} 玩；你可以在下面指挥 TA 或回应 TA～</div>`;
+                    return;
+                }
+                feed.innerHTML = log.filter(m => !m.hidden).map(m => `<div class="hug-msg ${m.role==='user'?'user':'ai'}">${hugEsc(m.text)}</div>`).join('');
+                feed.scrollTop = feed.scrollHeight;
+            }
+
+            async function callHugAI(toy) {
+                const pPlat = localStorage.getItem('apiPlatform') || 'openai';
+                const ep = localStorage.getItem('apiEndpoint') || '';
+                const model = localStorage.getItem('apiModel') || 'gpt-3.5-turbo';
+                const apiKey = localStorage.getItem('apiKey');
+                if (!apiKey) throw new Error('请先去 API 设置里填好 key');
+                const toyName = toy.name || '小玩偶';
+                const narName = selectedNarrator.name;
+                const persona = selectedNarrator.persona ? `「${narName}」的人设：${selectedNarrator.persona}\n\n` : '';
+                const profileBits = [
+                    (toy.brand||'').trim() ? `来历：${(toy.brand||'').trim()}` : '',
+                    (toy.birthday||'').trim() ? `生日/纪念日：${(toy.birthday||'').trim()}` : '',
+                    (toy.persona||'').trim() ? `性格设定：${(toy.persona||'').trim()}` : ''
+                ].filter(Boolean).join('；');
+                const toyPersona = (toy.persona || '').trim();
+                const sys = `${persona}用户有一只心爱的毛绒玩具「${toyName}」${profileBits?`（${profileBits}）`:''}，把它交给你照顾。你扮演「${narName}」，是【你】在跟这只娃娃互动——抱它、逗它、照顾它、陪它玩；用户在旁边看着，会指挥你或跟你说话。\n要求：\n1. 你是动作的主角：用「${narName}」的第一人称口吻，描写【你】怎么抱它/逗它/照顾它，以及你此刻的心情。不要写成是用户在做这些动作。\n2. 顺着用户的话：用户让你做什么，你就温柔地照做并描述；用户只是感叹或回应，你就自然接话；用户让"你随心"时，就按你自己当下的心情，自己挑一个想跟娃娃做的小互动。\n3. 自然地用上这只娃娃的设定（来历、性格等），让互动更贴合它。${toyName} 是个玩偶${toyPersona?`，带着上面的性格设定，可以让它有点呼应设定的拟人化小反应、小脾气（可爱即可）`:'，可以有一点点拟人化的可爱小反应'}，但它终究是玩偶，别写成它会真的说话或有真实生理反应。\n4. 每次回应 40-90 字，自然口语、多用叠词、触感细节（软软的、毛茸茸的、暖暖的、轻轻的）。顺着上文连贯地接，不要重复、不要用列表。直接输出，不要标题或前后说明。`;
+                let messages;
+                if (pPlat === 'gemini') {
+                    const hist = (toy.log||[]).map(m => (m.role==='user'?'用户：':narName+'：')+m.text).join('\n');
+                    messages = [{ role:'user', parts:[{ text: sys + '\n\n以下是你们的互动：\n' + hist + '\n\n请以 '+narName+' 的身份，自然地接住最后一条。' }] }];
+                } else {
+                    messages = [{ role:'system', content: sys }];
+                    (toy.log||[]).forEach(m => messages.push({ role: m.role==='user'?'user':'assistant', content: m.text }));
+                }
+                const payload = ApiHandler.generateChatPayload(pPlat, ep, apiKey, model, messages);
+                const resp = await fetch(payload.url, payload.options);
+                if (!resp.ok) throw new Error('API失败');
+                const dataR = await resp.json();
+                return (ApiHandler.parseChatResponse(pPlat, dataR) || '').trim() || ('（'+narName+'轻轻抱了抱'+toyName+'）');
+            }
+
+            // ===== 夜晚保护任务 🌙 =====
+            const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`; };
+            async function hugRawCall(sys, userLine) {
+                const pPlat = localStorage.getItem('apiPlatform') || 'openai';
+                const ep = localStorage.getItem('apiEndpoint') || '';
+                const model = localStorage.getItem('apiModel') || 'gpt-3.5-turbo';
+                const apiKey = localStorage.getItem('apiKey');
+                if (!apiKey) throw new Error('请先去 API 设置里填好 key');
+                let messages;
+                if (pPlat === 'gemini') messages = [{ role:'user', parts:[{ text: sys + (userLine?('\n\n'+userLine):'') }] }];
+                else messages = [{ role:'system', content: sys }, { role:'user', content: userLine || '好的' }];
+                const payload = ApiHandler.generateChatPayload(pPlat, ep, apiKey, model, messages);
+                const resp = await fetch(payload.url, payload.options);
+                if (!resp.ok) throw new Error('API失败');
+                const dataR = await resp.json();
+                return (ApiHandler.parseChatResponse(pPlat, dataR) || '').trim();
+            }
+            function archiveNight(ng) {
+                if (!ng) return;
+                if (!data.nightHistory) data.nightHistory = [];
+                if (!data.nightHistory.some(h => h.assignedAt === ng.assignedAt)) {
+                    data.nightHistory.unshift({ assignedAt: ng.assignedAt, date: ng.date, narratorName: ng.narratorName, assignments: ng.assignments, report: ng.report || '' });
+                    if (data.nightHistory.length > 30) data.nightHistory = data.nightHistory.slice(0, 30);
+                }
+            }
+            function nightBusy(msg) {
+                const el = appPage.querySelector('#hug-night');
+                if (el) el.innerHTML = `<div class="hug-night-head"><span>🌙 夜晚保护任务</span></div><div class="hug-night-body"><div class="hug-night-hint">${hugEsc(msg)}</div></div>`;
+            }
+            function renderNight() {
+                const el = appPage.querySelector('#hug-night');
+                if (!el) return;
+                const ng = data.nightGuard;
+                const hasHist = data.nightHistory && data.nightHistory.length;
+                let html = `<div class="hug-night-head"><span>🌙 夜晚保护任务</span>${hasHist?'<span class="hug-night-hist" id="hug-night-hist">守护记录 ›</span>':''}</div>`;
+                if (!ng) {
+                    html += `<div class="hug-night-body"><div class="hug-night-hint">睡前让 TA 给娃娃们派个守护任务，让它们守着你的梦乡～</div><button class="hug-night-btn" id="hug-night-go">🌙 今晚拜托 TA 安排守护</button></div>`;
+                } else {
+                    const isPast = ng.date !== todayStr();
+                    html += `<div class="hug-night-body">`;
+                    html += `<div class="hug-night-when">${isPast?'🌙 昨晚的守护':'🌙 今晚守护中'} · ${hugEsc(ng.narratorName||'TA')} 安排</div>`;
+                    html += ng.assignments.map(a => `<div class="hug-night-task"><span class="hug-night-toy">${hugEsc(a.toyName)}</span><span class="hug-night-do">${hugEsc(a.task)}</span></div>`).join('');
+                    if (ng.report) html += `<div class="hug-night-report">☀️ ${hugEsc(ng.report)}</div>`;
+                    if (ng.report) {
+                        html += `<button class="hug-night-btn ghost" id="hug-night-clear">收好，开始新的一天</button>`;
+                    } else {
+                        html += `<div class="hug-night-hint" style="margin-top:8px;">它们守着你的梦乡呢～</div>`;
+                        html += `<button class="hug-night-btn" id="hug-night-morning">☀️ 听听它们怎么守护你</button>`;
+                        html += `<button class="hug-night-btn ghost" id="hug-night-redo">重新安排</button>`;
+                    }
+                    html += `</div>`;
+                }
+                el.innerHTML = html;
+                const go = el.querySelector('#hug-night-go'); if (go) go.onclick = assignNightTasks;
+                const redo = el.querySelector('#hug-night-redo'); if (redo) redo.onclick = assignNightTasks;
+                const morning = el.querySelector('#hug-night-morning'); if (morning) morning.onclick = nightMorningReport;
+                const clr = el.querySelector('#hug-night-clear'); if (clr) clr.onclick = () => { archiveNight(data.nightGuard); data.nightGuard = null; saveData(data); renderNight(); };
+                const hist = el.querySelector('#hug-night-hist'); if (hist) hist.onclick = openNightHistory;
+            }
+            async function assignNightTasks() {
+                if (!selectedNarrator) { alert('先选一个陪玩的 TA 来安排吧～'); return; }
+                const toys = data.toys.filter(t => t.name);
+                if (!toys.length) { alert('娃柜里还没有娃娃呀，先添加一只～'); return; }
+                if (!localStorage.getItem('apiKey')) { alert('请先去 ⚙️ API 设置里配置 API Key～'); return; }
+                if (data.nightGuard) archiveNight(data.nightGuard);
+                nightBusy(selectedNarrator.name + ' 正在给娃娃们派任务…🌙');
+                try {
+                    const narName = selectedNarrator.name;
+                    const persona = selectedNarrator.persona ? `「${narName}」的人设：${selectedNarrator.persona}\n` : '';
+                    const list = toys.map(t => t.persona ? `${t.name}（${t.persona}）` : t.name).join('、');
+                    const sys = `${persona}你扮演「${narName}」。睡前，你珍视的人要去睡觉了，你要给 TA 的这些毛绒娃娃各分配一个"守护任务"，让它们今晚守着 TA、守护 TA 的睡眠和梦乡。娃娃们（按这个顺序）：${list}。\n请按上面顺序，给每只娃娃分配一个温柔可爱、贴合它性格的守护小任务（例如"守在枕头边，把噩梦都挡在外面""趴在胸口数着呼吸陪入睡"）。每个任务之间只用三个竖线 ||| 分隔，按娃娃顺序输出，每个任务 12-25 字，温柔有画面感，不要写娃娃名字、不要编号、不要任何多余的话。`;
+                    const text = await hugRawCall(sys, '请现在安排吧～');
+                    const parts = text.split('|||').map(s => s.trim());
+                    const assignments = toys.map((t, i) => ({ toyName: t.name, task: parts[i] || '乖乖守在你身边，陪你睡' }));
+                    data.nightGuard = { assignedAt: Date.now(), date: todayStr(), narratorName: narName, narratorId: selectedNarrator.id, assignments, report: '' };
+                    saveData(data); renderNight();
+                } catch(e) { nightBusy('安排失败了…再试一次吧～'); setTimeout(renderNight, 1500); }
+            }
+            async function nightMorningReport() {
+                if (!data.nightGuard) return;
+                if (!localStorage.getItem('apiKey')) { alert('请先去 ⚙️ API 设置里配置 API Key～'); return; }
+                const ng = data.nightGuard;
+                nightBusy('☀️ 听 TA 说说昨晚…');
+                try {
+                    const narName = selectedNarrator ? selectedNarrator.name : (ng.narratorName || 'TA');
+                    const persona = (selectedNarrator && selectedNarrator.persona) ? `「${narName}」的人设：${selectedNarrator.persona}\n` : '';
+                    const tasksDesc = ng.assignments.map(a => `${a.toyName}：${a.task}`).join('；');
+                    const sys = `${persona}你扮演「${narName}」。你安排了 TA 的毛绒娃娃们守护 TA 的睡眠：${tasksDesc}。请以「${narName}」的口吻，温柔地写一段"守护小汇报"，讲讲娃娃们是怎么守着 TA、守护 TA 梦乡的（可带点可爱的小情节），最后温柔地叮咛 TA 一句（TA 还醒着就哄 TA 快睡、天亮了就道早安，自然些）。60-100 字，自然口语、多叠词，不要列表、不要标题，直接输出。`;
+                    const report = await hugRawCall(sys, '早呀～');
+                    ng.report = report || '娃娃们都乖乖守着你，你睡得很安稳哦～';
+                    archiveNight(ng);
+                    const gcid = (selectedNarrator && selectedNarrator.id) || ng.narratorId;
+                    if (gcid) hsGuardCheckin(gcid);
+                    saveData(data); renderNight();
+                } catch(e) { nightBusy('汇报失败了…再试一次吧～'); setTimeout(renderNight, 1500); }
+            }
+            function openNightHistory() {
+                const list = data.nightHistory || [];
+                const overlay = document.createElement('div');
+                overlay.style.cssText = 'position:absolute;inset:0;background:rgba(0,0,0,0.4);z-index:1100;display:flex;flex-direction:column;justify-content:flex-end;';
+                const sheet = document.createElement('div');
+                sheet.style.cssText = 'background:#fff;border-radius:20px 20px 0 0;padding:18px 16px 28px;max-height:75%;overflow-y:auto;';
+                sheet.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;"><span style="font-size:15px;font-weight:600;color:#9E5F62;">🌙 守护记录</span><span id="hn-close" style="font-size:22px;color:#bbb;cursor:pointer;">×</span></div>` + (list.length ? list.map(h => {
+                    const d = new Date(h.assignedAt); const ds = `${d.getMonth()+1}月${d.getDate()}日`;
+                    return `<div style="background:#FFF6F6;border:1px solid #FAE0E2;border-radius:12px;padding:11px 13px;margin-bottom:10px;">
+                        <div style="font-size:12px;color:#B86E72;font-weight:600;margin-bottom:6px;">${ds} · ${hugEsc(h.narratorName||'TA')} 安排</div>
+                        ${h.assignments.map(a => `<div style="font-size:11px;color:#6d5550;line-height:1.7;"><b style="color:#E5807F;">${hugEsc(a.toyName)}</b>：${hugEsc(a.task)}</div>`).join('')}
+                        ${h.report?`<div style="font-size:11px;color:#8a6a4a;background:#FFF1DF;border-radius:8px;padding:7px 9px;margin-top:7px;line-height:1.6;">☀️ ${hugEsc(h.report)}</div>`:''}
+                    </div>`;
+                }).join('') : '<div style="text-align:center;color:#bbb;padding:30px;font-size:12px;">还没有守护记录哦</div>');
+                overlay.appendChild(sheet);
+                appPage.querySelector('.hug-page').appendChild(overlay);
+                sheet.querySelector('#hn-close').onclick = () => overlay.remove();
+                overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+            }
+
+            async function interact(userMsg, hideUser) {
+                const toy = getCurrentToy();
+                if (!toy?.imageRef) { alert('先上传一张玩偶照片吧～'); return; }
+                if (!selectedNarrator) { alert('先选择由谁来陪玩吧～'); return; }
+                if (!localStorage.getItem('apiKey')) { alert('请先去 ⚙️ API 设置里配置 API Key～'); return; }
+                if (!toy.log) toy.log = [];
+                toy.log.push({ role:'user', text: userMsg, hidden: !!hideUser });
+                if (toy.log.length > 80) toy.log = toy.log.slice(-80);
+                saveData(data); renderFeed();
+                const feed = appPage.querySelector('#hug-feed');
+                const typing = document.createElement('div');
+                typing.className = 'hug-typing';
+                typing.textContent = selectedNarrator.name + ' 正在陪 ' + (toy.name||'娃娃') + '…';
+                feed.appendChild(typing); feed.scrollTop = feed.scrollHeight;
+                try {
+                    const reply = await callHugAI(toy);
+                    toy.log.push({ role:'ai', text: reply });
+                    if (toy.log.length > 80) toy.log = toy.log.slice(-80);
+                    saveData(data); renderFeed();
+                } catch(e) {
+                    typing.textContent = '网络好像在偷懒……再试一次吧～';
+                }
+            }
 
             function getCurrentToy() {
                 return data.toys[data.currentIdx] || null;
@@ -11432,6 +11727,7 @@ const ApiHandler = {
                 const toy = getCurrentToy();
                 const canAct = !!(toy?.imageRef && selectedNarrator);
                 appPage.querySelectorAll('.hug-action-btn').forEach(b => b.disabled = !canAct);
+                renderFeed();
             }
 
             function renderCabinet() {
@@ -11485,54 +11781,260 @@ const ApiHandler = {
                 addLabel.textContent = '添加';
                 addItem.appendChild(addThumb);
                 addItem.appendChild(addLabel);
-                addItem.onclick = () => {
-                    data.toys.push({ imageRef: '', name: '' });
-                    data.currentIdx = data.toys.length - 1;
-                    saveData(data);
-                    renderCabinet();
-                    renderStage();
-                    updateButtons();
-                    setTimeout(() => openFilePicker(), 100);
-                };
+                addItem.onclick = () => openToyEditor(-1);
                 cabinet.appendChild(addItem);
             }
 
             async function renderStage() {
                 const toy = getCurrentToy();
                 const container = appPage.querySelector('#hug-toy-container');
-                const nameWrap = appPage.querySelector('#hug-toy-name-wrap');
                 if (!toy) {
-                    container.innerHTML = `<div class="hug-upload-area" id="hug-upload"><div style="font-size:32px;margin-bottom:8px;">🧸</div><div style="font-size:12px;">点击上传玩偶照片</div></div>`;
-                    nameWrap.style.display = 'none';
-                    appPage.querySelector('#hug-upload').onclick = () => {
-                        data.toys.push({ imageRef: '', name: '' });
-                        data.currentIdx = data.toys.length - 1;
-                        saveData(data);
-                        openFilePicker();
-                    };
-                } else if (toy.imageRef) {
-                    // 异步加载
-                    if (window.ImageDB) { try { await ImageDB.readyPromise; } catch(e){} }
-                    let url = toy.imageRef;
-                    if (toy.imageRef.startsWith('imgdb://')) {
-                        try { url = await ImageDB.resolve(toy.imageRef); } catch(e) { url = ''; }
-                    }
-                    if (url) {
-                        container.innerHTML = `<img class="hug-toy-img" src="${url}" alt="toy">`;
-                        container.querySelector('img').onclick = openFilePicker;
-                    }
-                    nameWrap.style.display = 'flex';
-                    appPage.querySelector('#hug-toy-name').value = toy.name || '';
-                } else {
-                    container.innerHTML = `<div class="hug-upload-area" id="hug-upload"><div style="font-size:32px;margin-bottom:8px;">🧸</div><div style="font-size:12px;">点击上传玩偶照片</div></div>`;
-                    nameWrap.style.display = 'none';
-                    appPage.querySelector('#hug-upload').onclick = openFilePicker;
+                    container.innerHTML = `<div class="hug-upload-area" id="hug-upload"><div style="font-size:32px;margin-bottom:8px;">🧸</div><div style="font-size:12px;">点这里添加一只娃娃</div></div>`;
+                    appPage.querySelector('#hug-upload').onclick = () => openToyEditor(-1);
+                    return;
                 }
+                let avatarHtml;
+                if (toy.imageRef) {
+                    const url = await resolveRef(toy.imageRef);
+                    avatarHtml = url ? `<img class="hug-profile-avatar" src="${url}" alt="toy">` : `<div class="hug-profile-avatar ph">🧸</div>`;
+                } else {
+                    avatarHtml = `<div class="hug-profile-avatar ph">🧸</div>`;
+                }
+                const meta = [toy.brand, toy.birthday].filter(Boolean).join(' · ');
+                container.innerHTML = `
+                    <div class="hug-profile">
+                        ${avatarHtml}
+                        <div class="hug-profile-name">${hugEsc(toy.name||'无名')}</div>
+                        ${meta?`<div class="hug-profile-meta">${hugEsc(meta)}</div>`:''}
+                        ${toy.persona?`<div class="hug-profile-persona">"${hugEsc(toy.persona)}"</div>`:''}
+                        <button class="hug-profile-edit" id="hug-edit-profile">✏️ 编辑档案</button>
+                    </div>`;
+                const img = container.querySelector('img.hug-profile-avatar');
+                if (img) img.onclick = () => openToyEditor(data.currentIdx);
+                const ph = container.querySelector('.hug-profile-avatar.ph');
+                if (ph) ph.onclick = () => openToyEditor(data.currentIdx);
+                container.querySelector('#hug-edit-profile').onclick = () => openToyEditor(data.currentIdx);
             }
+
+            // 选图片：裁正方形 → 存ImageDB → 回调 ref
+            function pickImage(cb) {
+                const fi = document.createElement('input');
+                fi.type = 'file'; fi.accept = 'image/*';
+                fi.onchange = e => {
+                    const f = e.target.files[0]; if (!f) return;
+                    const r = new FileReader();
+                    r.onload = ev => {
+                        const img = new Image();
+                        img.onload = async () => {
+                            const size = Math.min(img.width, img.height);
+                            const canvas = document.createElement('canvas');
+                            canvas.width = size; canvas.height = size;
+                            canvas.getContext('2d').drawImage(img, (img.width-size)/2, (img.height-size)/2, size, size, 0, 0, size, size);
+                            const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+                            let ref = dataUrl;
+                            try { if (window.ImageDB) { try { await ImageDB.readyPromise; } catch(e){} ref = await ImageDB.saveAndRef(dataUrl); } } catch(err) { ref = dataUrl; }
+                            cb(ref);
+                        };
+                        img.src = ev.target.result;
+                    };
+                    r.readAsDataURL(f);
+                };
+                fi.click();
+            }
+            async function resolveRef(ref) {
+                if (!ref) return '';
+                if (typeof ref === 'string' && ref.startsWith('imgdb://')) { try { if (window.ImageDB) { try { await ImageDB.readyPromise; } catch(e){} } return await ImageDB.resolve(ref); } catch(e) { return ''; } }
+                return ref;
+            }
+
+            // 娃娃档案编辑页
+            function openToyEditor(idx) {
+                const editing = idx >= 0 && !!data.toys[idx];
+                const src = editing ? data.toys[idx] : {};
+                const draft = { imageRef: src.imageRef||'', name: src.name||'', brand: src.brand||'', birthday: src.birthday||'', persona: src.persona||'' };
+                const mask = document.createElement('div');
+                mask.className = 'hug-editor-mask';
+                mask.innerHTML = `
+                    <div class="hug-editor">
+                        <div class="hug-editor-head">
+                            <span class="he-back" id="he-cancel">‹</span>
+                            <span class="he-title">${editing?'编辑娃娃档案':'添加娃娃'}</span>
+                            <span style="width:24px;"></span>
+                        </div>
+                        <div class="hug-editor-avatar-wrap">
+                            <div class="hug-editor-avatar ph" id="he-avatar"><span style="font-size:30px;">🧸</span><span style="font-size:11px;margin-top:4px;">加张照片</span></div>
+                            <div class="hug-editor-avatar-hint">点头像选娃娃的照片</div>
+                        </div>
+                        <div class="hug-field"><label>名字</label><input id="he-name" maxlength="12" placeholder="给它起个名字" value="${(draft.name||'').replace(/"/g,'&quot;')}"></div>
+                        <div class="hug-field"><label>品牌 / 来源（可选）</label><input id="he-brand" maxlength="30" placeholder="比如 Jellycat / 自己买的 / 朋友送的" value="${(draft.brand||'').replace(/"/g,'&quot;')}"></div>
+                        <div class="hug-field"><label>生日 / 来到身边的日子（可选）</label><input id="he-birthday" maxlength="20" placeholder="比如 2023-05-20 或 去年圣诞" value="${(draft.birthday||'').replace(/"/g,'&quot;')}"></div>
+                        <div class="hug-field"><label>性格设定（可选）</label><textarea id="he-persona" rows="3" maxlength="120" placeholder="比如 胆小爱吃布丁、要抱着才睡的小兔子">${(draft.persona||'').replace(/</g,'&lt;')}</textarea></div>
+                        <div class="hug-editor-btns">
+                            ${editing?'<button class="hug-del-btn" id="he-del">删除</button>':''}
+                            <button class="hug-save-btn" id="he-save">保存</button>
+                        </div>
+                    </div>`;
+                appPage.querySelector('.hug-page').appendChild(mask);
+                const avEl = mask.querySelector('#he-avatar');
+                const paintAvatar = async () => {
+                    const url = await resolveRef(draft.imageRef);
+                    if (url) { avEl.className = 'hug-editor-avatar'; avEl.innerHTML = ''; avEl.style.backgroundImage = `url(${url})`; }
+                    else { avEl.className = 'hug-editor-avatar ph'; avEl.style.backgroundImage = ''; avEl.innerHTML = '<span style="font-size:30px;">🧸</span><span style="font-size:11px;margin-top:4px;">加张照片</span>'; }
+                };
+                paintAvatar();
+                avEl.onclick = () => pickImage((ref) => { draft.imageRef = ref; paintAvatar(); });
+                mask.querySelector('#he-cancel').onclick = () => mask.remove();
+                if (editing) { const db = mask.querySelector('#he-del'); if (db) db.onclick = () => {
+                    if (!confirm('确定删除这个娃娃吗？（它的档案和互动记录会一起删掉哦）')) return;
+                    data.toys.splice(idx, 1);
+                    if (data.currentIdx >= data.toys.length) data.currentIdx = Math.max(0, data.toys.length - 1);
+                    saveData(data); mask.remove(); renderCabinet(); renderStage(); updateButtons();
+                }; }
+                mask.querySelector('#he-save').onclick = () => {
+                    const name = mask.querySelector('#he-name').value.trim();
+                    if (!name) { alert('给娃娃起个名字吧～'); return; }
+                    const rec = {
+                        imageRef: draft.imageRef,
+                        name: name.slice(0,12),
+                        brand: mask.querySelector('#he-brand').value.trim().slice(0,30),
+                        birthday: mask.querySelector('#he-birthday').value.trim().slice(0,20),
+                        persona: mask.querySelector('#he-persona').value.trim().slice(0,120)
+                    };
+                    if (editing) { data.toys[idx] = Object.assign({}, data.toys[idx], rec); }
+                    else { rec.log = []; data.toys.push(rec); data.currentIdx = data.toys.length - 1; }
+                    saveData(data); mask.remove(); renderCabinet(); renderStage(); updateButtons();
+                };
+            }
+
+            // 设置/恢复陪玩的 TA
+            function setNarrator(obj, persist) {
+                selectedNarrator = { id: obj.id, name: obj.name || obj.notes || '', avatar: obj.avatar || '', persona: obj.persona || '' };
+                const avatarBox = appPage.querySelector('#hug-narrator-avatar');
+                const av = selectedNarrator.avatar;
+                if (avatarBox) {
+                    if (av && av.includes('<')) avatarBox.innerHTML = `<div style="width:100%;height:100%;overflow:hidden;border-radius:8px;">${av}</div>`;
+                    else if (av) {
+                        avatarBox.innerHTML = `<img style="width:34px;height:34px;border-radius:8px;object-fit:cover;" alt="">`;
+                        const topImg = avatarBox.querySelector('img');
+                        (async () => { if (window.ImageDB) { try { await ImageDB.readyPromise; } catch(e){} } if (av.startsWith('imgdb://') && window.ImageDB) { const url = await ImageDB.resolve(av); if (url) topImg.src = url; } else if (av.startsWith('data:') || av.startsWith('http')) topImg.src = av; })();
+                    } else avatarBox.textContent = '🧸';
+                }
+                const nm = appPage.querySelector('#hug-narrator-name'); if (nm) nm.textContent = selectedNarrator.name;
+                if (persist !== false) { data.lastNarrator = selectedNarrator; saveData(data); }
+                updateButtons();
+                renderNight();
+            }
+
+            // 直接按心跳同频的 localStorage 格式写入（跨 app）
+            const hsK = (cid, k) => 'hs_' + cid + '_' + k;
+            function hsMemPush(cid, item) {
+                try {
+                    const raw = localStorage.getItem(hsK(cid, 'memory'));
+                    const list = raw ? JSON.parse(raw) : [];
+                    list.unshift({ ...item, time: new Date().toISOString(), id: 'm_' + Date.now() });
+                    if (list.length > 100) list.length = 100;
+                    localStorage.setItem(hsK(cid, 'memory'), JSON.stringify(list));
+                    return true;
+                } catch(e) { return false; }
+            }
+            function hsGuardCheckin(cid) {
+                if (!cid) return;
+                try {
+                    const raw = localStorage.getItem(hsK(cid, 'healthHabits'));
+                    const habits = raw ? JSON.parse(raw) : [];
+                    let h = habits.find(x => x._guard || x.name === '夜晚守护');
+                    const today = new Date().toISOString().slice(0,10);
+                    if (!h) { h = { id: 'h_' + Date.now(), emoji: '🌙', name: '夜晚守护', history: [], created: new Date().toISOString(), _guard: true }; habits.push(h); }
+                    if (!h.history) h.history = [];
+                    if (!h.history.includes(today)) h.history.push(today);
+                    localStorage.setItem(hsK(cid, 'healthHabits'), JSON.stringify(habits));
+                    // 累计守护次数：只增不减
+                    try { const n = parseInt(localStorage.getItem(hsK(cid, 'guardTotal')) || '0', 10) || 0; localStorage.setItem(hsK(cid, 'guardTotal'), String(n + 1)); } catch(e) {}
+                } catch(e) {}
+            }
+
+            // ===== 久别信 💌 =====
+            function renderLetterBanner() {
+                const b = appPage.querySelector('#hug-letter-banner');
+                if (!b) return;
+                if (data.awayLetter) {
+                    b.style.display = 'block';
+                    b.innerHTML = `<div class="hug-letter-card" id="hug-letter-open">💌 ${hugEsc(data.awayLetter.narratorName||'TA')} 给你留了一封信<div class="hug-letter-sub">你好像 ${data.awayLetter.days} 天没来看它们了，点开看看～</div></div>`;
+                    b.querySelector('#hug-letter-open').onclick = openLetter;
+                } else { b.style.display = 'none'; b.innerHTML = ''; }
+            }
+            async function openLetter() {
+                if (!data.awayLetter) return;
+                if (!data.awayLetter.body) {
+                    if (!selectedNarrator) { alert('先选一个陪玩的 TA，TA 才好给你写信～'); return; }
+                    if (!localStorage.getItem('apiKey')) { alert('请先去 ⚙️ API 设置里配置 API Key～'); return; }
+                    const overlay0 = letterOverlay('💌 ' + selectedNarrator.name + ' 正在给你写信…', '', false);
+                    try {
+                        const toys = data.toys.filter(t => t.name);
+                        const list = toys.length ? toys.map(t => t.name).join('、') : '它的娃娃们';
+                        const userNick = localStorage.getItem('user_nick') || '小桃子';
+                        const narName = selectedNarrator.name;
+                        const persona = selectedNarrator.persona ? `「${narName}」的人设：${selectedNarrator.persona}\n` : '';
+                        const sys = `${persona}你扮演「${narName}」。${userNick} 大约有 ${data.awayLetter.days} 天没来陪它的毛绒娃娃们了（娃娃们：${list}）。现在 TA 回来了。请以「${narName}」的口吻，给 TA 写一封温柔的小信，讲讲这段时间你和娃娃们都做了些什么、娃娃们怎么想念 TA（可有可爱小情节，比如谁趴在窗边等、谁把被子焐得暖暖的），字里行间是惦记和欢迎 TA 回来，不要责怪 TA。120-200 字，自然口语、多叠词、有画面感，开头用"亲爱的${userNick}"作称呼。不要列表、不要标题（除开头称呼），直接写信的内容。`;
+                        const body = await hugRawCall(sys, '请写吧～');
+                        data.awayLetter.body = body || ('亲爱的' + userNick + '，我们都好想你呀，娃娃们一直乖乖等你回来呢。');
+                        data.awayLetter.narratorId = selectedNarrator.id;
+                        data.awayLetter.narratorName = narName;
+                        saveData(data);
+                        overlay0.remove();
+                    } catch(e) { overlay0.remove(); alert('信没写成…网络偷懒了，再点一次试试～'); return; }
+                }
+                showLetter();
+            }
+            function letterOverlay(titleText, bodyHtml, withButtons) {
+                const overlay = document.createElement('div');
+                overlay.style.cssText = 'position:absolute;inset:0;background:rgba(0,0,0,0.45);z-index:1300;display:flex;align-items:center;justify-content:center;padding:24px;';
+                overlay.innerHTML = `<div style="background:linear-gradient(180deg,#FFFDF8,#FFF3F3);border-radius:18px;padding:20px 18px;max-width:300px;width:100%;max-height:80%;display:flex;flex-direction:column;box-shadow:0 8px 30px rgba(0,0,0,0.18);">
+                    <div style="font-size:14px;font-weight:600;color:#B86E72;text-align:center;margin-bottom:12px;">${titleText}</div>
+                    <div style="flex:1;overflow-y:auto;font-size:13px;line-height:1.9;color:#6d5550;white-space:pre-wrap;">${bodyHtml}</div>
+                    ${withButtons?`<div style="display:flex;gap:8px;margin-top:16px;"><button id="hl-save" style="flex:1;border:none;border-radius:13px;padding:10px;background:#FFE0E2;color:#B05C60;font-size:13px;font-weight:600;cursor:pointer;">💗 存进心跳记忆</button><button id="hl-close" style="flex:1;border:none;border-radius:13px;padding:10px;background:#fff;color:#BA8488;border:1px solid #FAD2D5;font-size:13px;cursor:pointer;">收好</button></div>`:''}
+                </div>`;
+                appPage.querySelector('.hug-page').appendChild(overlay);
+                return overlay;
+            }
+            function showLetter() {
+                const L = data.awayLetter;
+                const overlay = letterOverlay('💌 ' + (L.narratorName||'TA') + ' 的信', hugEsc(L.body), true);
+                const saveBtn = overlay.querySelector('#hl-save');
+                const closeBtn = overlay.querySelector('#hl-close');
+                if (L.savedToMemory) { saveBtn.textContent = '✓ 已存进心跳记忆'; saveBtn.disabled = true; saveBtn.style.opacity = '0.6'; }
+                saveBtn.onclick = () => {
+                    if (L.savedToMemory) return;
+                    const cid = L.narratorId;
+                    if (!cid) { alert('找不到 TA 的记忆本…'); return; }
+                    const ok = hsMemPush(cid, { type: 'letter', title: '娃娃们的悄悄话', body: L.body, days: L.days });
+                    if (ok) { L.savedToMemory = true; saveData(data); saveBtn.textContent = '✓ 已存进心跳记忆'; saveBtn.disabled = true; saveBtn.style.opacity = '0.6'; }
+                    else alert('存失败了，再试一次～');
+                };
+                closeBtn.onclick = () => { data.awayLetter = null; saveData(data); overlay.remove(); renderLetterBanner(); };
+            }
+
+            // 久别检测 + 恢复上次的 TA + 更新最近打开时间
+            (function initAwayAndNarrator() {
+                const LETTER_DAYS = 3;
+                const now = Date.now();
+                const last = data.lastOpenedAt || 0;
+                if (last && data.toys && data.toys.filter(t=>t.name).length) {
+                    const days = Math.floor((now - last) / 86400000);
+                    if (days >= LETTER_DAYS && !data.awayLetter) {
+                        data.awayLetter = { days, body: '', narratorName: (data.lastNarrator&&data.lastNarrator.name)||'TA', narratorId: (data.lastNarrator&&data.lastNarrator.id)||'', savedToMemory: false, generatedAt: now };
+                    }
+                }
+                data.lastOpenedAt = now;
+                if (data.lastNarrator && data.lastNarrator.id) setNarrator(data.lastNarrator, false);
+                saveData(data);
+            })();
 
             renderCabinet();
             renderStage();
             updateButtons();
+            renderNight();
+            renderLetterBanner();
 
             // 联系人选择弹窗
             appPage.querySelector('#hug-narrator-row').onclick = () => {
@@ -11589,26 +12091,7 @@ const ApiHandler = {
                     item.onclick = () => {
                         const c = contacts.find(x => x.id === item.dataset.narId);
                         if (!c) return;
-                        selectedNarrator = { id: c.id, name: c.notes || c.name, avatar: c.avatar || '', persona: c.persona || '' };
-                        // 更新头像显示
-                        const avatarBox = appPage.querySelector('#hug-narrator-avatar');
-                        const av = selectedNarrator.avatar;
-                        if (av && av.includes('<')) {
-                            avatarBox.innerHTML = `<div style="width:100%;height:100%;overflow:hidden;border-radius:8px;">${av}</div>`;
-                        } else if (av) {
-                            avatarBox.innerHTML = `<img style="width:34px;height:34px;border-radius:8px;object-fit:cover;" alt="">`;
-                            const topImg = avatarBox.querySelector('img');
-                            (async () => {
-                                if (window.ImageDB) { try { await ImageDB.readyPromise; } catch(e) {} }
-                                if (av.startsWith('imgdb://') && window.ImageDB) {
-                                    const url = await ImageDB.resolve(av); if (url) topImg.src = url;
-                                } else if (av.startsWith('data:') || av.startsWith('http')) { topImg.src = av; }
-                            })();
-                        } else {
-                            avatarBox.textContent = '🧸';
-                        }
-                        appPage.querySelector('#hug-narrator-name').textContent = selectedNarrator.name;
-                        updateButtons();
+                        setNarrator({ id: c.id, name: c.notes || c.name, avatar: c.avatar || '', persona: c.persona || '' });
                         overlay.remove();
                     };
                 });
@@ -11654,21 +12137,6 @@ const ApiHandler = {
                 fi.click();
             }
 
-            appPage.querySelector('#hug-toy-name').addEventListener('input', e => {
-                const toy = getCurrentToy();
-                if (toy) { toy.name = e.target.value; saveData(data); renderCabinet(); }
-            });
-
-            appPage.querySelector('#hug-toy-delete').onclick = () => {
-                if (data.toys.length === 0) return;
-                if (!confirm('要从娃柜里移除这个娃娃吗？')) return;
-                data.toys.splice(data.currentIdx, 1);
-                data.currentIdx = Math.max(0, data.currentIdx - 1);
-                saveData(data);
-                renderCabinet();
-                renderStage();
-                updateButtons();
-            };
             const CLOTHES_OPTIONS = ['粉色小裙子', '兔耳朵帽', '小毛衣', '小披风', '草莓围兜', '燕尾服'];
             const FOOD_OPTIONS = ['草莓蛋糕', '小饼干', '蜂蜜牛奶', '布丁', '棉花糖', '热可可'];
 
@@ -11694,100 +12162,26 @@ const ApiHandler = {
                     };
                 });
                 const inputEl = block.querySelector('.hug-option.custom-input input');
-                // 【安卓兼容】keydown + input 双监听
-                const _doInputAction = () => {
-                    if (inputEl.value.trim()) {
+                inputEl.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && inputEl.value.trim()) {
                         triggerAction(actionVerb, inputEl.value.trim());
                         block.style.display = 'none';
-                    }
-                };
-                inputEl.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' && !e.isComposing) {
-                        e.preventDefault();
-                        _doInputAction();
-                    }
-                });
-                inputEl.addEventListener('input', (e) => {
-                    if (inputEl.value.endsWith('\n')) {
-                        inputEl.value = inputEl.value.replace(/\n+$/, '');
-                        _doInputAction();
                     }
                 });
             }
 
-            async function triggerAction(verb, detail) {
-                const currentToy = getCurrentToy();
-                if (!currentToy?.imageRef) {
-                    alert('先上传一张玩偶照片吧～');
-                    return;
-                }
-                if (!selectedNarrator) {
-                    alert('先选择由谁来陪玩吧～');
-                    return;
-                }
-                const respEl = appPage.querySelector('#hug-response');
-                respEl.classList.remove('empty');
-                respEl.textContent = '...';
-
-                const apiKey = localStorage.getItem('apiKey');
-                const pPlat = localStorage.getItem('apiPlatform') || 'openai';
-                const ep = localStorage.getItem('apiEndpoint') || '';
-                const model = localStorage.getItem('apiModel') || 'gpt-3.5-turbo';
-                if (!apiKey) {
-                    respEl.textContent = '请先去 ⚙️ API 设置里配置 API Key～';
-                    return;
-                }
-
-                const toyName = currentToy?.name || '小玩偶';
-                const narratorName = selectedNarrator ? selectedNarrator.name : null;
-                let userTask = '';
-                if (verb === '你来选吧') {
-                    userTask = `请自己挑一个跟 ${toyName} 互动的小动作（比如蹭蹭脸、梳毛、捏捏小爪子、说悄悄话、放在枕头边等），描述照顾 TA 的过程。`;
-                } else if (verb === '换衣服') {
-                    userTask = `帮 ${toyName} 换上「${detail}」，描述给 TA 穿衣服的过程，以及 TA 穿上后的可爱样子。`;
-                } else if (verb === '喂零食') {
-                    userTask = `给 ${toyName} 喂「${detail}」，描述喂 TA 吃零食的过程和 TA 的反应。`;
-                } else if (verb === '摸摸头') {
-                    userTask = `轻轻摸摸 ${toyName} 的头，描述触感、温度、TA 的小反应。`;
-                } else if (verb === '抱抱') {
-                    userTask = `把 ${toyName} 抱在怀里，描述抱着 TA 的温暖画面，TA 的柔软触感和小动作。`;
-                }
-
-                const narratorInstruction = narratorName
-                    ? `你现在扮演「${narratorName}」，用户把 ${toyName} 交给你照顾。以 TA 的口吻描述照顾玩偶的过程。回复格式：${narratorName}：（描述内容），直接输出，不要其他说明。`
-                    : `以第一人称"我"描述你照顾这个玩偶的过程，直接输出文字，不要前后说明。`;
-
-                const sysPrompt = `用户把心爱的毛绒玩具「${toyName}」托付给你照顾。\n\n【当前动作】：${userTask}\n\n【写作要求】：\n1. 60-120 字，温柔自然的语气。\n2. ${narratorInstruction}\n3. 玩偶是一个玩具，不要给它写真实的生理反应（不要眨眼、鼓脸、咬东西等）。可以描述它的外观触感、你对它做动作的过程、以及你照顾它时的心情。\n4. 多描述触感细节（软软的、毛茸茸的、暖暖的、轻轻的）。\n5. 语气温柔珍视，像在认真照顾一件重要的东西，直接输出文字，不要标题或说明。`;
-
-                let messages;
-                if (pPlat === 'gemini') {
-                    messages = [{ role: 'user', parts: [{ text: sysPrompt }] }];
-                } else {
-                    messages = [
-                        { role: 'system', content: sysPrompt },
-                        { role: 'user', content: '请直接输出。' }
-                    ];
-                }
-
-                try {
-                    const payload = ApiHandler.generateChatPayload(pPlat, ep, apiKey, model, messages);
-                    const resp = await fetch(payload.url, payload.options);
-                    if (!resp.ok) throw new Error('API失败');
-                    const dataR = await resp.json();
-                    let text = ApiHandler.parseChatResponse(pPlat, dataR);
-                    if (!text) throw new Error('空回复');
-                    text = text.trim();
-                    respEl.textContent = '';
-                    let i = 0;
-                    const it = setInterval(() => {
-                        if (i >= text.length) { clearInterval(it); return; }
-                        respEl.textContent += text[i];
-                        i++;
-                    }, 35);
-                } catch(e) {
-                    console.error('虚拟抱抱失败', e);
-                    respEl.textContent = '网络好像在偷懒……再试一次吧～';
-                }
+            function triggerAction(verb, detail) {
+                const toy = getCurrentToy();
+                const toyName = (toy && toy.name) || '小玩偶';
+                const narName = selectedNarrator ? selectedNarrator.name : 'TA';
+                let msg = '';
+                if (verb === '你来选吧') msg = `（${narName}，你想怎么陪 ${toyName} 玩都行，随你心意～）`;
+                else if (verb === '换衣服') msg = `给 ${toyName} 换上「${detail}」吧～`;
+                else if (verb === '喂零食') msg = `喂 ${toyName} 吃点「${detail}」吧～`;
+                else if (verb === '摸摸头') msg = `摸摸 ${toyName} 的头吧～`;
+                else if (verb === '抱抱') msg = `抱抱 ${toyName} 吧～`;
+                else msg = `陪 ${toyName} ${verb}吧～`;
+                interact(msg, true);
             }
 
             appPage.querySelectorAll('.hug-action-btn').forEach(btn => {
@@ -11799,6 +12193,13 @@ const ApiHandler = {
                     else if (act === 'surprise') triggerAction('你来选吧');
                 };
             });
+
+            const fuInput = appPage.querySelector('#hug-fu-input');
+            const fuSend = appPage.querySelector('#hug-fu-send');
+            const doFu = () => { const t = fuInput.value.trim(); if (!t) return; fuInput.value = ''; interact(t); };
+            if (fuSend) fuSend.onclick = doFu;
+            if (fuInput) fuInput.onkeypress = (e) => { if (e.key === 'Enter') { e.preventDefault(); doFu(); } };
+            renderFeed();
         }
 
         // ============ 香言护语：护肤化妆收纳柜（中等版：场景+步骤流程+续聊）============
@@ -11834,7 +12235,8 @@ const ApiHandler = {
                 .bc-chip.dim { opacity: 0.4; }
                 .bc-free { display: flex; gap: 7px; margin: 0 20px 14px; }
                 .bc-free input { flex: 1; min-width: 0; border: none; background: white; border-radius: 14px; padding: 9px 12px; font-size: 12px; color: #4a3370; outline: none; box-shadow: 0 1px 4px rgba(138,109,201,0.06); }
-                .bc-free button { flex-shrink: 0; border: none; background: #b89ce0; color: white; border-radius: 14px; padding: 9px 14px; font-size: 13px; font-weight: 600; cursor: pointer; }
+                .bc-free button { flex-shrink: 0; border: none; background: #b89ce0; color: white; width: 38px; height: 38px; border-radius: 50%; padding: 0; font-size: 15px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+                .bc-free button:active { transform: scale(0.94); }
                 .bc-result { margin: 0 20px 14px; }
                 .bc-result-empty { background: white; border-radius: 16px; padding: 16px; font-size: 13px; color: #9c87b8; font-style: italic; text-align: center; opacity: 0.7; box-shadow: 0 2px 10px rgba(138,109,201,0.06); }
                 .bc-scene-title { font-size: 12px; color: #8a6dc9; font-weight: 600; margin: 0 4px 8px; }
@@ -11846,7 +12248,17 @@ const ApiHandler = {
                 .bc-followup { display: none; gap: 7px; margin-top: 4px; }
                 .bc-followup.on { display: flex; }
                 .bc-followup input { flex: 1; min-width: 0; border: none; background: white; border-radius: 14px; padding: 9px 12px; font-size: 12px; color: #4a3370; outline: none; box-shadow: 0 1px 4px rgba(138,109,201,0.06); }
-                .bc-followup button { flex-shrink: 0; border: none; background: #b89ce0; color: white; border-radius: 14px; padding: 9px 14px; font-size: 13px; cursor: pointer; }
+                .bc-followup button { flex-shrink: 0; border: none; background: #b89ce0; color: white; width: 38px; height: 38px; border-radius: 50%; padding: 0; font-size: 15px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+                .bc-followup button:active { transform: scale(0.94); }
+                .bc-chat { margin: 0 20px 10px; display: flex; flex-direction: column; gap: 8px; max-height: 340px; overflow-y: auto; }
+                .bc-chat-empty { background: white; border-radius: 16px; padding: 16px; font-size: 12px; color: #9c87b8; font-style: italic; text-align: center; opacity: 0.75; box-shadow: 0 2px 10px rgba(138,109,201,0.08); }
+                .bc-msg { max-width: 80%; padding: 9px 12px; border-radius: 14px; font-size: 13px; line-height: 1.7; white-space: pre-wrap; box-shadow: 0 1px 5px rgba(138,109,201,0.1); }
+                .bc-msg.ai { align-self: flex-start; background: white; color: #4a3370; }
+                .bc-msg.me { align-self: flex-end; background: #efe2ff; color: #4a3370; }
+                .bc-chatbar { display: flex; gap: 8px; align-items: center; margin: 0 20px 20px; }
+                .bc-chatbar input { flex: 1; min-width: 0; border: none; background: white; border-radius: 18px; padding: 10px 14px; font-size: 13px; color: #4a3370; outline: none; box-shadow: 0 1px 5px rgba(138,109,201,0.1); }
+                .bc-chatbar button { flex-shrink: 0; border: none; background: #b89ce0; color: white; width: 38px; height: 38px; border-radius: 50%; padding: 0; font-size: 15px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+                .bc-chatbar button:active { transform: scale(0.94); }
                 .bc-shelf-title { font-size: 12px; color: #9c87b8; margin: 4px 24px 6px; display: flex; justify-content: space-between; align-items: center; }
                 .bc-shelf-add { color: #8a6dc9; font-size: 18px; cursor: pointer; padding: 0 4px; }
                 .bc-shelf { background: rgba(255,255,255,0.5); border-radius: 16px; margin: 0 20px 12px; padding: 14px 12px; min-height: 50px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px 8px; justify-items: center; }
@@ -11891,7 +12303,7 @@ const ApiHandler = {
                 </div>
                 <div class="bc-free">
                     <input type="text" id="bc-free-input" placeholder="或者…说说你想要的（比如 帮我做个补水急救）">
-                    <button id="bc-free-go">走起</button>
+                    <button id="bc-free-go">➤</button>
                 </div>
 
                 <div class="bc-result"><div class="bc-result-empty" id="bc-result-empty">选好 TA、点一个场景，就开始啦～</div></div>
@@ -11900,6 +12312,10 @@ const ApiHandler = {
                 <div class="bc-shelf" id="bc-shelf-skin"></div>
                 <div class="bc-shelf-title"><span>💄 彩妆区</span><span class="bc-shelf-add" data-shelf="makeup">＋</span></div>
                 <div class="bc-shelf" id="bc-shelf-makeup"></div>
+
+                <div class="bc-sec-label" style="margin-top:14px;">💬 和 TA 聊聊护肤</div>
+                <div class="bc-chat" id="bc-chat"><div class="bc-chat-empty" id="bc-chat-empty">选好 TA，就能问问护肤品怎么搭、能不能一起用、适不适合你～</div></div>
+                <div class="bc-chatbar"><input type="text" id="bc-chat-in" placeholder="想聊聊哪件护肤品呀…"><button id="bc-chat-send">➤</button></div>
             </div>`;
 
             const KEY = 'beauty_cabinet_data';
@@ -12032,7 +12448,7 @@ const ApiHandler = {
                     html += `<div class="bc-step"><div class="bc-step-no">${i+1}</div><div class="bc-step-text">${esc(st)}</div></div>`;
                 });
                 html += `<div id="bc-extra"></div>`;
-                html += `<div class="bc-followup on"><input type="text" id="bc-fu-input" placeholder="想跟 ${esc(selectedNarrator.name)} 说点什么…"><button id="bc-fu-go">说</button></div>`;
+                html += `<div class="bc-followup on"><input type="text" id="bc-fu-input" placeholder="想跟 ${esc(selectedNarrator.name)} 说点什么…"><button id="bc-fu-go">➤</button></div>`;
                 resultEl.innerHTML = html;
                 const fuInput = resultEl.querySelector('#bc-fu-input');
                 const fuGo = resultEl.querySelector('#bc-fu-go');
@@ -12131,6 +12547,44 @@ const ApiHandler = {
 
             renderShelf('skin');
             renderShelf('makeup');
+
+            // —— 聊聊护肤（消息气泡）——
+            let bcChat = [];
+            const chatList = appPage.querySelector('#bc-chat');
+            const chatIn = appPage.querySelector('#bc-chat-in');
+            const chatSend = appPage.querySelector('#bc-chat-send');
+            function renderChat() {
+                if (!bcChat.length) {
+                    chatList.innerHTML = `<div class="bc-chat-empty" id="bc-chat-empty">选好 TA，就能问问护肤品怎么搭、能不能一起用、适不适合你～</div>`;
+                    return;
+                }
+                chatList.innerHTML = bcChat.map(m => `<div class="bc-msg ${m.role==='user'?'me':'ai'}">${esc(m.content)}</div>`).join('');
+                requestAnimationFrame(() => { chatList.scrollTop = chatList.scrollHeight; });
+            }
+            async function sendChat() {
+                const t = chatIn.value.trim();
+                if (!t) { chatIn.focus(); return; }
+                if (!selectedNarrator) { alert('先选一个陪你的 TA 吧～'); return; }
+                chatIn.value = '';
+                bcChat.push({ role:'user', content: t });
+                renderChat();
+                const narName = selectedNarrator.name;
+                const skinL = listWithType('skin'), makeL = listWithType('makeup');
+                const sys = `${selectedNarrator.persona?`${narName} 的人设：${selectedNarrator.persona}\n\n`:''}你是 ${narName}，正温柔地陪用户聊护肤/化妆，像懂行又贴心的人。用户柜子里的护肤品：${skinL}；彩妆：${makeL}。结合这些和 TA 的提问，给体贴实用的建议（怎么搭配、先后顺序、能不能一起用、适不适合等），可以追问 TA 的肤质或困扰。2到4句，口语、温柔、多叠词，不要列表、不要长篇大论。`;
+                const msgs = [{ role:'system', content: sys }];
+                bcChat.slice(-12).forEach(m => msgs.push(m));
+                bcChat.push({ role:'assistant', content: '…' });
+                renderChat();
+                try {
+                    const reply = await callAI(msgs);
+                    bcChat[bcChat.length-1] = { role:'assistant', content: reply || '（TA 想了想，没说话）' };
+                } catch(e) {
+                    bcChat[bcChat.length-1] = { role:'assistant', content: '（网络偷懒了，再问一次试试～）' };
+                }
+                renderChat();
+            }
+            if (chatSend) chatSend.onclick = sendChat;
+            if (chatIn) chatIn.onkeypress = (e) => { if (e.key==='Enter'){ e.preventDefault(); sendChat(); } };
         }
 
 
