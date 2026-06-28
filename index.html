@@ -262,9 +262,9 @@
         /* 底部输入栏 */
         .chat-footer { background-color: #FBF9F4; border-top: 1.5px solid #e8e0d0; position: absolute; bottom: 0; left: 0; right: 0; z-index: 20; box-sizing: border-box; }
         .chat-footer::after { display: none; }
-        .chat-input-bar { display: flex; align-items: center; min-height: 40px; padding: 5px 10px calc(20px + env(safe-area-inset-bottom, 0px)) 10px; gap: 5px; box-sizing: border-box; transition: padding-bottom 0.2s; }
+        .chat-input-bar { display: flex; align-items: center; min-height: 40px; padding: 5px 8px calc(20px + env(safe-area-inset-bottom, 0px)) 8px; gap: 4px; box-sizing: border-box; transition: padding-bottom 0.2s; }
         .chat-input-bar.panel-open { padding-top: 4px !important; padding-bottom: 4px !important; }
-        .chat-input-field { flex-grow: 1; border: 1px solid #e8e0d0; padding: 2px 12px; border-radius: 14px; font-size: 16px; color: #775C56; background: white; min-height: 24px; max-height: 100px; overflow-y: auto; }
+        .chat-input-field { flex-grow: 1; flex-shrink: 1; min-width: 0; border: 1px solid #e8e0d0; padding: 2px 12px; border-radius: 14px; font-size: 16px; color: #775C56; background: white; min-height: 24px; max-height: 100px; overflow-y: auto; }
         .chat-voice-btn { flex-grow: 1; text-align: center; padding: 8px; background: #ffffff; border-radius: 20px; font-size: 14px; color: #775C56; border: 1px solid #e8e0d0; cursor: pointer; user-select: none; font-weight: 500; }
         .chat-voice-btn:active { background: #f0e8e8; }
         
@@ -283,6 +283,8 @@
         #emoji-btn { background: none; border: none; padding: 0; }
         #plus-btn { background: #D5EBE4; border: 1.5px solid #775C56; font-size: 18px; color: #775C56; line-height: 1; box-sizing: border-box; }
         #ai-btn { background: #D5EBE4; border: 1.5px solid #775C56; color: #775C56; font-size: 11px; font-weight: bold; box-sizing: border-box; }
+        #send-btn { background: #D5EBE4; border: 1.5px solid #775C56; box-sizing: border-box; }
+        #send-btn:active { background: #B8DDD0; }
 
         .wave-icon {
             position: relative;
@@ -2480,7 +2482,7 @@ DB.init();
                             <div class="flex justify-between items-center"><span class="text-sm font-medium" style="color:#775C56;">心声模式</span><div class="relative inline-block w-10 mr-2"><input type="checkbox" id="mode-thoughts" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"/><label for="mode-thoughts" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label></div></div>
                             <div class="flex justify-between items-center mt-4"><span class="text-sm font-medium" style="color:#775C56;">异地模式</span><div class="relative inline-block w-10 mr-2"><input type="checkbox" id="mode-longdistance" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"/><label for="mode-longdistance" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label></div></div>
                         </div>
-                        <div class="space-y-3" style="padding-bottom:20px;"><button id="ai-save-btn" class="w-full font-bold py-3 rounded-xl" style="background-color: #D5EBE4; color: #775C56;">保存</button><div class="flex gap-3"><button id="ai-chat-btn" class="flex-1 font-bold py-3 rounded-xl hidden" style="background:#FFD3D4;color:#775C56;border:none;">聊天</button><button id="ai-delete-btn" class="flex-1 font-bold py-3 rounded-xl hidden" style="background:#FFD3D4;color:#775C56;border:none;">删除</button></div></div>
+                        <div class="space-y-3" style="padding-bottom:20px;"><button id="ai-save-btn" class="w-full font-bold py-3 rounded-xl" style="background-color: #D5EBE4; color: #775C56;">保存</button><button id="ai-newchat-btn" class="w-full font-bold py-3 rounded-xl hidden" style="background:#FBF9F4;color:#775C56;border:1.5px solid #E8D9D2;">发起新聊天</button><div class="flex gap-3"><button id="ai-chat-btn" class="flex-1 font-bold py-3 rounded-xl hidden" style="background:#FFD3D4;color:#775C56;border:none;">聊天</button><button id="ai-delete-btn" class="flex-1 font-bold py-3 rounded-xl hidden" style="background:#FFD3D4;color:#775C56;border:none;">删除</button></div></div>
                     </div>
                 `
             };
@@ -3048,6 +3050,7 @@ DB.init();
                                 <div id="emoji-btn" class="chat-action-btn" style="padding:0;overflow:hidden;"><svg viewBox="0 0 100 100" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="45" fill="#D5EBE4" stroke="#775C56" stroke-width="5.5"/><circle cx="36" cy="42" r="7" fill="#775C56"/><circle cx="64" cy="42" r="7" fill="#775C56"/><path d="M 28 62 Q 50 80 72 62" stroke="#775C56" stroke-width="5.5" fill="none" stroke-linecap="round"/></svg></div>
                                 <div id="plus-btn" class="chat-action-btn">+</div>
                                 <div id="ai-btn" class="chat-action-btn">AI</div>
+                                <div id="send-btn" class="chat-action-btn" title="发送"><svg viewBox="0 0 24 24" width="14" height="14"><path d="M2 21l21-9L2 3v7l15 2-15 2z" fill="#775C56"/></svg></div>
                             </div>
                             <div class="plus-panel" id="plus-p">
                                 <div class="plus-grid">
@@ -4198,6 +4201,9 @@ DB.init();
                             _sendInpMsg();
                         }
                     });
+                    // 【发送按钮】给安卓机回车键失效的用户兜底——点这个按钮也能发出消息
+                    const sendBtn = p.querySelector('#send-btn');
+                    if (sendBtn) sendBtn.onclick = () => _sendInpMsg();
                     const inputBar = p.querySelector('.chat-input-bar');
                     let keyboardOpen = false;
                     const updateInputBarPanel = () => {
@@ -9605,6 +9611,7 @@ DB.init();
                 const saveBtn = appPage.querySelector('#ai-save-btn');
                 const chatBtn = appPage.querySelector('#ai-chat-btn');
                 const deleteBtn = appPage.querySelector('#ai-delete-btn');
+                const newChatBtn = appPage.querySelector('#ai-newchat-btn');
                 const idInput = appPage.querySelector('#ai-contact-id');
                 const nameInput = appPage.querySelector('#ai-name');
                 const notesInput = appPage.querySelector('#ai-notes');
@@ -9700,12 +9707,14 @@ DB.init();
                 if (!contactId) {
                     chatBtn.style.display = 'none';
                     deleteBtn.style.display = 'none';
+                    newChatBtn.style.display = 'none';
                     // 新建联系人时，"保存"按钮改成"保存并开始聊天"，让朋友知道点了能聊天
                     saveBtn.textContent = '保存并开始聊天';
                 } else {
                     // 编辑联系人时，用户的目的是改信息，不需要"聊天"按钮（要聊天直接从列表点联系人即可）
                     chatBtn.style.display = 'none';
                     deleteBtn.style.display = 'block';
+                    newChatBtn.style.display = 'block';
                     // 编辑联系人时，按钮文案就叫"保存"
                     saveBtn.textContent = '保存';
                     const contact = DB.getContact(contactId);
@@ -9822,6 +9831,55 @@ DB.init();
                         appPage.classList.remove('active');
                     }
                 }
+
+                // 【发起新聊天】像 Claude 的 new chat 那样——清空跟这个联系人的所有聊天记录，回到全新的聊天窗口
+                // 联系人本身、人设、世界书、模式都不变；只有对话历史会清掉，重新开始
+                newChatBtn.onclick = () => {
+                    const cid = idInput.value;
+                    if (!cid) return;
+                    const contact = DB.getContact(cid);
+                    const name = (contact && (contact.notes || contact.name)) || 'TA';
+                    if (!confirm('和「' + name + '」开启一段全新的聊天？\n之前所有聊天记录会清空，但联系人本身、人设和设置都会保留～')) return;
+                    try {
+                        // 清空这个联系人的聊天记录，再发一条系统消息当作"新聊天的起点"
+                        // 这样聊天列表(200)能识别到这条聊天，朋友能直接看到入口
+                        const chats = DB.getChats();
+                        chats[cid] = [{
+                            id: `msg_newchat_${Date.now()}`,
+                            sender: 'system',
+                            text: '✨ 新聊天开始啦',
+                            time: new Date().toISOString()
+                        }];
+                        DB.saveChats(chats);
+                        // 关掉编辑页 + 直接跳进新聊天窗口
+                        appPage.classList.remove('active');
+                        // openChat 在 setupChatApp 作用域里，这里用全局事件方式打开
+                        const chatPage = document.getElementById('chat-page');
+                        if (chatPage) {
+                            // 通过点联系人列表项的方式打开聊天
+                            const nav200 = chatPage.querySelector('.nav-item-520[data-page="200"]');
+                            if (nav200) nav200.click();
+                            // 等列表渲染好再触发点击
+                            setTimeout(() => {
+                                const item = chatPage.querySelector('.chat-list-item[data-id="' + cid + '"]');
+                                if (item) item.click();
+                                else {
+                                    // 如果聊天列表里没有这个联系人（聊天已清空所以不显示），从通讯录走
+                                    const nav201 = chatPage.querySelector('.nav-item-520[data-page="201"]');
+                                    if (nav201) {
+                                        nav201.click();
+                                        setTimeout(() => {
+                                            const ci = chatPage.querySelector('.contact-item[data-id="' + cid + '"]');
+                                            if (ci) ci.click();
+                                        }, 50);
+                                    }
+                                }
+                            }, 100);
+                        }
+                    } catch(e) {
+                        alert('发起新聊天失败：' + e.message);
+                    }
+                };
                 
                 backBtn.onclick = () => appPage.classList.remove('active');
             }
