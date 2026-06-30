@@ -8332,14 +8332,14 @@ DB.init();
                             const i = parseInt(card.dataset.memIdx);
                             const item = list[i];
                             if (!item) return;
-                            _hsShowMemoryDetail(appPage, item);
+                            _hsShowMemoryDetail(appPage, item, c);
                         };
                     });
                 }, 10);
             }
             
             // 心跳记忆·详情弹窗：根据 item.type 渲染完整内容
-            function _hsShowMemoryDetail(appPage, item) {
+            function _hsShowMemoryDetail(appPage, item, c) {
                 let title = '心跳记忆';
                 let body = '';
                 const d = new Date(item.time);
@@ -8380,12 +8380,29 @@ DB.init();
                     const kindLabel = item.kind === 'romance' ? '💕 恋情问卷' : '🍀 友情问卷';
                     title = kindLabel + ' · 同步率 ' + item.syncRate + '%';
                     let quizBody = `<div style="font-size:13px;color:#775C56;line-height:1.7;margin-bottom:14px;">完成 ${item.totalQ} 题，同步率 <strong style="color:#E89B9B;">${item.syncRate}%</strong></div>`;
-                    // 如果存了题目详情就展示，否则老数据降级
-                    if (item.questions && item.questions.length > 0 && item.userPicks) {
-                        quizBody += item.questions.map((q, qi) => {
-                            const userPickIdx = item.userPicks[qi];
+                    // 优先用记忆里存的题目；老数据没存的话，去 quizHistory 里把对应那份完整记录捞回来
+                    let qQuestions = item.questions, qUserPicks = item.userPicks, qMatches = item.matches;
+                    if ((!qQuestions || !qQuestions.length || !qUserPicks) && c && c.id) {
+                        const hist = hsGet(c.id, 'quizHistory', []);
+                        // 先按 类型+同步率+题数 筛，再挑时间最接近的那一份
+                        const itemT = item.time ? new Date(item.time).getTime() : 0;
+                        const cand = hist.filter(h => h.questions && h.questions.length &&
+                            h.kind === item.kind && h.syncRate === item.syncRate &&
+                            (h.answered === item.totalQ || h.questions.length === item.totalQ));
+                        if (cand.length) {
+                            cand.sort((a, b) => Math.abs(new Date(a.time).getTime() - itemT) - Math.abs(new Date(b.time).getTime() - itemT));
+                            const match = cand[0];
+                            qQuestions = match.questions;
+                            qUserPicks = match.userPicks;
+                            qMatches = match.matches;
+                        }
+                    }
+                    // 如果有题目详情就展示，否则降级
+                    if (qQuestions && qQuestions.length > 0 && qUserPicks) {
+                        quizBody += qQuestions.map((q, qi) => {
+                            const userPickIdx = qUserPicks[qi];
                             const aiPickIdx = q.aiPick;
-                            const isMatch = item.matches ? item.matches[qi] : (userPickIdx === aiPickIdx);
+                            const isMatch = qMatches ? qMatches[qi] : (userPickIdx === aiPickIdx);
                             const userAns = q.options && q.options[userPickIdx] || '';
                             const aiAns = q.options && q.options[aiPickIdx] || '';
                             return `<div style="margin-bottom:14px;padding:12px;background:#FBF9F4;border-radius:10px;border-left:3px solid ${isMatch ? '#7CB17C' : '#E89B9B'};">
