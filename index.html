@@ -4570,6 +4570,8 @@ DB.init();
 
                                     const getMsgText = (msg) => {
                                         if (msg.type === 'image') return `[用户发送了一张图片，请在你的第一条回复中自然地评论这张图片的内容。图片描述: ${msg.text || '无'}]`;
+                                        if (msg.type === 'sticker') return `[用户发了一个表情包（贴纸），用来表达此刻的情绪或反应，请把它当作一种有含义的表达自然回应，不要当成普通文字消息，也不要忽略它]`;
+                                        if (msg.type === 'voice') return msg.text ? `[用户发来一条语音，内容是：${msg.text}]` : '[用户发来一条语音]';
                                         if (msg.type === 'file') return `[用户分享了文件《${msg.name || ''}》，内容：${msg.content || '（无内容）'}]`;
                                         if (msg.type === 'music') return `[用户分享了歌曲《${msg.song || ''}》- ${msg.artist || ''}，歌词：${msg.lyric || '（无歌词）'}]`;
                                         if (msg.text) return msg.text;
@@ -4596,10 +4598,18 @@ DB.init();
                                         }
                                     } else {
                                         messages = [];
-                                        for (const msg of visibleHistory.slice(-_ctxLimit)) {
+                                        const _ctxMsgs = visibleHistory.slice(-_ctxLimit);
+                                        // 只把"最近这一个"表情包当图片发给 AI 看，更早的表情包用文字代替，避免撑爆 token
+                                        let _lastStickerI = -1;
+                                        for (let _i = _ctxMsgs.length - 1; _i >= 0; _i--) {
+                                            if (_ctxMsgs[_i].type === 'sticker' && _ctxMsgs[_i].sender === 'me') { _lastStickerI = _i; break; }
+                                        }
+                                        for (let _i = 0; _i < _ctxMsgs.length; _i++) {
+                                            const msg = _ctxMsgs[_i];
                                             const role = msg.sender === 'me' ? 'user' : 'assistant';
-                                            // 图片消息：尝试取出真实图片，按 vision 格式发给 AI，让它真的"看到"
-                                            if (msg.type === 'image' && msg.sender === 'me') {
+                                            // 图片：每张都发给 AI 看；表情包：只发最近这一个，让它真的"看到"
+                                            const _visualOK = (msg.type === 'image' || (msg.type === 'sticker' && _i === _lastStickerI)) && msg.sender === 'me';
+                                            if (_visualOK) {
                                                 let imgData = null;
                                                 try {
                                                     if (window.ImageDB && msg.content) {
@@ -4607,10 +4617,14 @@ DB.init();
                                                     }
                                                 } catch(e) {}
                                                 if (imgData && imgData.startsWith('data:image')) {
+                                                    const _isSticker = msg.type === 'sticker';
+                                                    const _defaultPrompt = _isSticker
+                                                        ? '（我发了一个表情包/贴纸，请看看它表达的是什么情绪或意思，然后像平时聊天那样自然地回应我——把它当成一种有含义的表达，别当成普通文字或忽略它）'
+                                                        : '（我发了一张图片，请仔细看看是什么，然后像平时聊天那样自然地回应我——记得连发好几条短消息，别只回一条就完事）';
                                                     messages.push({
                                                         role: 'user',
                                                         content: [
-                                                            { type: 'text', text: msg.text ? msg.text : '（我发了一张图片，请仔细看看是什么，然后像平时聊天那样自然地回应我——记得连发好几条短消息，别只回一条就完事）' },
+                                                            { type: 'text', text: msg.text ? msg.text : _defaultPrompt },
                                                             { type: 'image_url', image_url: { url: imgData } }
                                                         ]
                                                     });
