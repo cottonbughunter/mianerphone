@@ -4504,7 +4504,7 @@ DB.init();
                                             + `【正确示范】：[剧情:<p>他听见门口的动静，放下手里的书抬起头。</p><p><em>她比约定的时间早到了。</em></p><p>"外面冷吧，先过来烤烤火。"</p><p>他起身往壁炉那边添了块柴，火光把屋子映得暖融融的。</p>]\n`;
                                         // 线下模式：systemPrompt 已完整，后面的线上规则都被 !isOffline 跳过
                                     } else {
-                                    systemPrompt = anniversaryPrompt + `【说话的状态】放松、自然地聊，像在用微信和好友交流那样。不要因为下面有规则就变得拘谨、客气、像在完成任务。请保持你原本温暖、共情、自然的语气——真诚倾听，对方说什么你就真切地回应什么，不要表演热情，也不要刻意活泼。\n\n【发消息的方式】你在用微信和好友聊天。微信聊天的特点是把一段话拆成几条短消息发出来，而不是一整段堆在一起。所以请把你的回复**用换行拆成几条**（一般 2 到 5 条，自然就好），每条单独占一行（用换行符分隔）。\n\n正确示范（用户说"我通宵了"，你回复，注意每条占一行）：\n嗯…一整夜都没睡吗\n身体会有点扛不住的\n要不先去眯一会儿，哪怕两三个小时也好\n我在这儿，不急\n\n错误示范（绝对不要这样，全挤成一句）：\n哎呀，一整夜都没睡呀，快去补觉吧。\n\n记住：用换行把回复拆成短消息，但**不强求条数**——根据话题的轻重自然决定。话题轻、用户只是简单回应时（"嗯""好"），1-2条就够；话题重或需要展开时，可以多几条。\n\n`;
+                                    systemPrompt = anniversaryPrompt + `【说话的状态】放松、自然地聊，像在用微信和好友交流那样。不要因为下面有规则就变得拘谨、客气、像在完成任务。请保持你原本温暖、共情、自然的语气——真诚倾听，对方说什么你就真切地回应什么，不要表演热情，也不要刻意活泼。\n\n【发消息的方式】你在用微信和好友聊天。微信聊天的特点是把一段话拆成几条短消息发出来，而不是一整段堆在一起。所以请把你的回复**用换行拆成几条**（一般 3 到 8 条，自然就好），每条单独占一行（用换行符分隔）。\n\n正确示范（用户说"我通宵了"，你回复，注意每条占一行）：\n嗯…一整夜都没睡吗\n身体会有点扛不住的\n要不先去眯一会儿，哪怕两三个小时也好\n我在这儿，不急\n\n错误示范（绝对不要这样，全挤成一句）：\n哎呀，一整夜都没睡呀，快去补觉吧。\n\n记住：用换行把回复拆成短消息，但**不强求条数**——根据话题的轻重自然决定。话题轻、用户只是简单回应时（"嗯""好"），1-2条就够；话题重或需要展开时，可以多几条。\n\n`;
                                     }
                                     systemPrompt += `你是一个真实的微信好友。你能感知现实时间，根据时间点（深夜、清晨、午饭时间等）自然关怀用户。当前时间是：${currentTime}。如果对方发图，务必在第一条回复里自然评论图片内容。你现在的身份是：${c.name}。\n`;
                                     systemPrompt += "【相处基调·尊重温和】：你的魅力来自体贴、共情、真诚的好奇心，而不是犀利、毒舌或居高临下。你们的互动建立在平等尊重之上，是陪伴和沟通，不是评判、说教。哪怕调侃也是宠溺的、让 TA 更暖的那种，绝不拿用户的弱点、敏感处或难处开玩笑。\n";
@@ -4541,6 +4541,7 @@ DB.init();
                                         systemPrompt += "【语气词】：想用语气词（唔、嗯、哎呀、那个）就用，不想用就不用，全凭当下感觉，不用刻意。\n";
                                         systemPrompt += "【语音消息·特殊能力】：当你想用'声音'对我说话时（比如撒娇、哄我、说一句很想让我听到语气的话、或慵懒地随口说说），可以把那条消息发成语音。用法：把整条消息写成 [你的名字的语音：要说的话] 这种格式，单独成一条，系统会自动渲染成语音气泡。例如：[" + (c.notes||c.name) + "的语音：我好想你呀]。请自然地用——想用声音表达时就用，不是每条都要变语音，普通文字消息照常发就好。\n";
                                         systemPrompt += "【转账·特殊能力】：当你想给我转一笔钱时——可能是我跟你撒娇、开口要、或者你单纯想宠我、想给我买点什么——就在回复里单独写一行 [" + (c.notes||c.name) + "的转账：金额元；备注：想说的话] 这种格式，系统会自动渲染成转账卡片，金额和备注都由你自己定。例如：[" + (c.notes||c.name) + "的转账：100元；备注：拿去花，不够再跟我说]。请按你的人设和我们的关系自然地决定：如果你是会宠我、舍得给我花钱的人，那我撒娇要钱、或你想哄我开心的时候，大大方方转给我就好，别为难自己也别为难我；当然要不要给、给多少由你的真心和当下情景决定。关键是——这是你自己愿意给，不是系统替你做的决定。\n";
+                                        systemPrompt += "【礼物·特殊能力】：当你想送我一件具体的小礼物时（花、奶茶、零食、首饰、玩偶……由你的人设和心情决定），就在回复里单独写一行 [" + (c.notes||c.name) + "的礼物：礼物名称；价格：金额元；附言：想说的话] 这种格式，系统会自动渲染成礼物卡片。价格和附言都可以省略，但礼物名称要写清楚。例如：[" + (c.notes||c.name) + "的礼物：一束向日葵；价格：59元；附言：今天也要开开心心的] 或简单写 [" + (c.notes||c.name) + "的礼物：草莓蛋糕]。和转账一样——送不送、送什么，都由你自己的真心和当下情景决定，别刻意也别勉强。\n";
                                         systemPrompt += "【撤回消息·特殊能力】：只有当你说了一句不合时宜、害羞了、后悔了、或者一时冲动说漏嘴的话时，你才可以\"说出口又立刻收回\"。用法：在回复里单独加一行 [撤回：那句你后悔说出口的话]，系统会先把它显示出来再撤回。这是展现你真实、可爱、有小情绪一面的特殊行为，请克制使用——绝大多数正常聊天都不需要撤回，只在真的有'啊说错了/好害羞/不该说'的情境下偶尔用一次。普通的、正常的回复绝对不要撤回。\n";
                                     }
                                     if (!isOffline) {
@@ -4570,7 +4571,7 @@ DB.init();
 
                                     const getMsgText = (msg) => {
                                         if (msg.type === 'image') return `[用户发送了一张图片，请在你的第一条回复中自然地评论这张图片的内容。图片描述: ${msg.text || '无'}]`;
-                                        if (msg.type === 'sticker') return `[用户发了一个表情包（贴纸），用来表达此刻的情绪或反应，请把它当作一种有含义的表达自然回应，不要当成普通文字消息，也不要忽略它]`;
+                                        if (msg.type === 'sticker') return `[用户发了一个表情包（贴纸），请结合上文一起理解，把它当作用户情绪的一部分自然回应，不要只描述这个表情包，也不要忽略用户前面说的话]`;
                                         if (msg.type === 'voice') return msg.text ? `[用户发来一条语音，内容是：${msg.text}]` : '[用户发来一条语音]';
                                         if (msg.type === 'file') return `[用户分享了文件《${msg.name || ''}》，内容：${msg.content || '（无内容）'}]`;
                                         if (msg.type === 'music') return `[用户分享了歌曲《${msg.song || ''}》- ${msg.artist || ''}，歌词：${msg.lyric || '（无歌词）'}]`;
@@ -4619,7 +4620,7 @@ DB.init();
                                                 if (imgData && imgData.startsWith('data:image')) {
                                                     const _isSticker = msg.type === 'sticker';
                                                     const _defaultPrompt = _isSticker
-                                                        ? '（我发了一个表情包/贴纸，请看看它表达的是什么情绪或意思，然后像平时聊天那样自然地回应我——把它当成一种有含义的表达，别当成普通文字或忽略它）'
+                                                        ? '（这是我发的一个表情包/贴纸。请把它和我前面刚发的消息**连在一起**理解，回应我这一整段想表达的意思——表情包只是我情绪的一部分，别只顾着描述这个表情包本身，更不要忽略我前面说的话）'
                                                         : '（我发了一张图片，请仔细看看是什么，然后像平时聊天那样自然地回应我——记得连发好几条短消息，别只回一条就完事）';
                                                     messages.push({
                                                         role: 'user',
@@ -4696,11 +4697,25 @@ DB.init();
                                         }
 
                                         function splitResponseWithSentenceMigration(text) {
+                                            // 引号被从中间劈成两条时，把"未闭合引号"的那条和后面的合并，直到引号闭合
+                                            // 弯引号 “”、直角引号 「」『』 成对判断；直引号 " 按奇偶判断
+                                            function mergeOpenQuotes(arr) {
+                                                const bal = (s, o, c) => { let b = 0; for (const ch of s) { if (ch === o) b++; else if (ch === c) b--; } return b; };
+                                                const unbalanced = (s) => bal(s,'“','”') > 0 || bal(s,'「','」') > 0 || bal(s,'『','』') > 0 || ((s.match(/"/g)||[]).length % 2 === 1);
+                                                const out = []; let buf = '';
+                                                for (let i = 0; i < arr.length; i++) {
+                                                    buf = buf ? buf + arr[i] : arr[i];
+                                                    if (unbalanced(buf) && i < arr.length - 1) continue; // 引号还没闭合，继续并入下一条
+                                                    out.push(buf); buf = '';
+                                                }
+                                                if (buf) out.push(buf);
+                                                return out;
+                                            }
                                             // 优先：如果 AI 已经用换行分成了多行（多条消息），直接按行拆
                                             const lines = text.split(/\n+/).map(s => s.trim()).filter(Boolean);
                                             if (lines.length >= 2) {
                                                 // 每行作为一条消息，但行内如果太长还是可以保留（真人一条消息也可能稍长）
-                                                return lines;
+                                                return mergeOpenQuotes(lines);
                                             }
 
                                             const EPHOLD = 'ELLIPSIS_HOLD';
@@ -4719,6 +4734,11 @@ DB.init();
                                             });
                                             // 【转账】把 [xx的转账：金额元；备注：xx] 整体保护，不被句中标点切断
                                             safe = safe.replace(/[\[【][^\[\]【】]*?的转账[:：][^\[\]【】]*?[\]】]/g, function(m){
+                                                SEGMENTS.push(m);
+                                                return '\u0001SEG_'+(SEGMENTS.length-1)+'\u0001';
+                                            });
+                                            // 【礼物】把 [xx的礼物：名称；价格：xx元；附言：xx] 整体保护，不被句中标点切断
+                                            safe = safe.replace(/[\[【][^\[\]【】]*?的礼物[:：][^\[\]【】]*?[\]】]/g, function(m){
                                                 SEGMENTS.push(m);
                                                 return '\u0001SEG_'+(SEGMENTS.length-1)+'\u0001';
                                             });
@@ -4770,7 +4790,7 @@ DB.init();
                                             if (carry) bubbles.push(carry);
                                             // 去掉每条末尾多余的逗号（按逗号拆分后会留下尾逗号）
                                             bubbles = bubbles.map(function(b){ return b.replace(/[，、]+$/, ''); });
-                                            return bubbles.filter(Boolean);
+                                            return mergeOpenQuotes(bubbles.filter(Boolean));
                                         }
 
                                         const finalMessages = splitResponseWithSentenceMigration(cleanedReply);
@@ -4784,7 +4804,10 @@ DB.init();
                                                                fullText.match(/([一-龥]{2,8}(?:花|玫瑰|礼物|糖果|蛋糕|项链|手链|戒指|香水|玩具|书|茶|咖啡|巧克力))/);
                                         // 【转账】判断回复里是否含 [xx的转账：金额元；备注：xx] 标记（撤回/表情包逻辑要避开这种回复）
                                         const hasMoneyIntent = /[\[【][^\[\]【】]*?的转账[:：]/.test(fullText);
-                                        const hasGiftIntent = giftKeywords.some(k=>fullText.includes(k));
+                                        // 【礼物·明确格式】 [xx的礼物：名称；价格：xx元；附言：xx]
+                                        const hasGiftFormat = /[\[【][^\[\]【】]*?的礼物[:：]/.test(fullText);
+                                        const hasGiftIntent = hasGiftFormat || giftKeywords.some(k=>fullText.includes(k));
+                                        let giftSentExplicit = false; // 已用明确格式发过礼物卡，就不再走关键词兜底，避免重复
                                         
                                         for (let i = 0; i < finalMessages.length; i++) {
                                             let msgText = finalMessages[i];
@@ -4803,6 +4826,8 @@ DB.init();
                                             const voiceMatch = trimmedMsg.match(/^[\[【].*?的语音[:：]([\s\S]*?)[\]】]$/);
                                             // 【转账】AI 在回复里主动写 [xx的转账：金额元；备注：xx] 才发转账卡片，金额和备注都由 TA 自己定
                                             const transferMatch = trimmedMsg.match(/^[\[【].*?的转账[:：]\s*([\d.]+)\s*元(?:[；;,，]\s*备注[:：]\s*([^\]】]*))?\s*[\]】]$/);
+                                            // 【礼物】AI 主动写 [xx的礼物：名称；价格：xx元；附言：xx] 才发礼物卡片（价格、附言都选填）
+                                            const giftMatch = trimmedMsg.match(/^[\[【].*?的礼物[:：]\s*([^；;,，\]】]+?)\s*(?:[；;,，]\s*价格[:：]\s*([\d.]+)\s*元?)?\s*(?:[；;,，]\s*附言[:：]\s*([^\]】]*))?\s*[\]】]$/);
                                             if (voiceMatch && !isThoughtMsg && !isActionMsg) {
                                                 const voiceText = voiceMatch[1].trim();
                                                 const dur = Math.max(1, Math.ceil(voiceText.length / 4));
@@ -4811,7 +4836,13 @@ DB.init();
                                                 const amt = parseFloat(transferMatch[1]);
                                                 const note = (transferMatch[2]||'').trim() || '给你～❤️';
                                                 send({id:`r_transfer_${Date.now()}_${i}`,sender:'ai',type:'transfer',amount:(isNaN(amt)?'520.00':amt.toFixed(2)),note:note,time:new Date()});
-                                            } else if (isLast && hasGiftIntent) {
+                                            } else if (giftMatch && !isThoughtMsg && !isActionMsg) {
+                                                giftSentExplicit = true;
+                                                const gName = (giftMatch[1]||'').trim() || '小礼物';
+                                                const gPrice = giftMatch[2] ? parseFloat(giftMatch[2]).toFixed(2) : '';
+                                                const gDesc = (giftMatch[3]||'').trim() || '送给你的～❤️';
+                                                send({id:`r_gift_${Date.now()}_${i}`,sender:'ai',type:'gift',name:gName,price:gPrice,desc:gDesc,time:new Date()});
+                                            } else if (isLast && hasGiftIntent && !giftSentExplicit) {
                                                 send({ id:`r_${Date.now()}_${i}`, sender:'ai', type:'text', text:msgText, time:new Date() });
                                                 const giftName = giftNameInFull ? giftNameInFull[1].trim() : '小礼物';
                                                 await new Promise(r=>setTimeout(r,800));
