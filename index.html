@@ -17722,7 +17722,7 @@ const ApiHandler = {
                         <div id="gl-top" style="flex-shrink:0;"></div>
                         <div id="gl-feed" style="flex:1;min-height:0;overflow-y:auto;padding:14px 14px 6px;-webkit-overflow-scrolling:touch;"></div>
                         <div id="gl-actionbar" style="flex-shrink:0;"></div>
-                        <div style="flex-shrink:0;display:flex;gap:6px;padding:8px 12px calc(40px + env(safe-area-inset-bottom));background:${CREAM};">
+                        <div id="gl-nav-bar" style="flex-shrink:0;display:flex;gap:6px;padding:8px 12px calc(10px + env(safe-area-inset-bottom));background:${CREAM};">
                             <span class="gl-nav" data-nav="gacha" style="flex:1;text-align:center;background:#fff;color:${BROWN};border-radius:12px;padding:9px 4px;font-size:12px;cursor:pointer;border:1px solid ${ROSE};">💎 抽卡池</span>
                             <span class="gl-nav" data-nav="shop" style="flex:1;text-align:center;background:#fff;color:${BROWN};border-radius:12px;padding:9px 4px;font-size:12px;cursor:pointer;border:1px solid ${ROSE};">🛍️ 商店</span>
                             <span class="gl-nav" data-nav="date" style="flex:1;text-align:center;background:#fff;color:${BROWN};border-radius:12px;padding:9px 4px;font-size:12px;cursor:pointer;border:1px solid ${ROSE};">💌 约会</span>
@@ -17826,6 +17826,11 @@ const ApiHandler = {
                     };
                     bar.querySelector('#gl-aff-ok').onclick = ok;
                     affEl.addEventListener('keydown', e => { if (e.key === 'Enter') ok(); });
+                    const navBarAff = appPage.querySelector('#gl-nav-bar');
+                    if (navBarAff) {
+                        affEl.addEventListener('focus', () => { navBarAff.style.display = 'none'; });
+                        affEl.addEventListener('blur', () => { navBarAff.style.display = 'flex'; });
+                    }
                 } else {
                     bar.innerHTML = `
                         <div id="gl-hint" style="text-align:center;font-size:11px;color:${BROWN};opacity:0.5;padding:2px 0;">${state.log.length && state.log[state.log.length-1].t!=='reward' ? 'TA 在等你的回应…' : ''}</div>
@@ -17837,6 +17842,11 @@ const ApiHandler = {
                     const send = () => { const v = input.value.trim(); if (!v || busy) return; input.value=''; onUserReply(v); };
                     bar.querySelector('#gl-send').onclick = send;
                     input.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+                    const navBar = appPage.querySelector('#gl-nav-bar');
+                    if (navBar) {
+                        input.addEventListener('focus', () => { navBar.style.display = 'none'; });
+                        input.addEventListener('blur', () => { navBar.style.display = 'flex'; });
+                    }
                 }
             }
 
