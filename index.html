@@ -4975,7 +4975,7 @@ DB.init();
                                             // 弯引号 “”、直角引号 「」『』 成对判断；直引号 " 按奇偶判断
                                             function mergeOpenQuotes(arr) {
                                                 const bal = (s, o, c) => { let b = 0; for (const ch of s) { if (ch === o) b++; else if (ch === c) b--; } return b; };
-                                                const unbalanced = (s) => bal(s,'“','”') > 0 || bal(s,'「','」') > 0 || bal(s,'『','』') > 0 || ((s.match(/"/g)||[]).length % 2 === 1);
+                                                const unbalanced = (s) => bal(s,'“','”') > 0 || bal(s,'「','」') > 0 || bal(s,'『','』') > 0 || bal(s,'〈','〉') > 0 || ((s.match(/"/g)||[]).length % 2 === 1);
                                                 const out = []; let buf = '';
                                                 for (let i = 0; i < arr.length; i++) {
                                                     buf = buf ? buf + arr[i] : arr[i];
