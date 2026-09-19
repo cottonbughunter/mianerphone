@@ -3941,8 +3941,9 @@ DB.init();
                             const getIdx = () => parseInt(isMusic ? card.dataset.midx : card.dataset.fidx);
                             card.addEventListener('contextmenu',(e)=>{e.preventDefault();const i=getIdx();if(i<0)return;if(selectMode){if(selectedIdxs.has(i))selectedIdxs.delete(i);else selectedIdxs.add(i);selectCount.textContent=`已选${selectedIdxs.size}条`;render();}else showCtxMenu(e.clientX,e.clientY,i);});
                             let ft;
-                            card.addEventListener('touchstart',(e)=>{const t=e.touches[0];ft=setTimeout(()=>showCtxMenu(t.clientX,t.clientY,getIdx()),600);},{passive:true});
-                            card.addEventListener('touchend',()=>clearTimeout(ft));
+                            let cardJustOpened = false;
+                            card.addEventListener('touchstart',(e)=>{const t=e.touches[0];cardJustOpened=false;ft=setTimeout(()=>{cardJustOpened=true;showCtxMenu(t.clientX,t.clientY,getIdx());},600);},{passive:true});
+                            card.addEventListener('touchend',(e)=>{clearTimeout(ft);if(cardJustOpened){e.preventDefault();setTimeout(()=>{cardJustOpened=false;},400);}},{passive:false});
                             card.addEventListener('touchmove',()=>clearTimeout(ft));
                             card.addEventListener('click', (e) => {
                                 e.stopPropagation();
@@ -4095,11 +4096,25 @@ DB.init();
                             });
                             // Mobile: touch long press shows context menu
                             let touchTimer;
+                            let justOpenedByLongPress = false;
                             bubble.addEventListener('touchstart', (e) => {
                                 const t = e.touches[0];
-                                touchTimer = setTimeout(() => showCtxMenu(t.clientX, t.clientY, parseInt(bubble.dataset.idx)), 600);
+                                justOpenedByLongPress = false;
+                                touchTimer = setTimeout(() => {
+                                    justOpenedByLongPress = true;
+                                    showCtxMenu(t.clientX, t.clientY, parseInt(bubble.dataset.idx));
+                                }, 600);
                             }, {passive:true});
-                            bubble.addEventListener('touchend', () => clearTimeout(touchTimer));
+                            bubble.addEventListener('touchend', (e) => {
+                                clearTimeout(touchTimer);
+                                // 长按弹出菜单后松手，手机浏览器会紧接着补发一个"幽灵click"事件，
+                                // 刚好撞上菜单自己那个"点哪里都关闭"的监听，导致菜单弹出来立刻又消失。
+                                // 这里把这一下松手对应的 click 吞掉，让菜单能正常留在屏幕上。
+                                if (justOpenedByLongPress) {
+                                    e.preventDefault();
+                                    setTimeout(() => { justOpenedByLongPress = false; }, 400);
+                                }
+                            }, {passive:false});
                             bubble.addEventListener('touchmove', () => clearTimeout(touchTimer));
                             // voice气泡的cursor样式 + 直接绑点击展开（手机端可靠性更高）
                             if (bubble.classList.contains('voice')) {
@@ -12877,6 +12892,18 @@ const ApiHandler = {
             }
         } else { // Handles 'openai' and 'MyAPI'
             raw = data.choices?.[0]?.message?.content;
+            // 【思考泄漏修复】不少"反代"/中转会把 Gemini 2.5、DeepSeek-R1 这类带"思考"过程的模型
+            // 包装成 OpenAI 兼容格式时，直接把思考过程原样塞进 content 字段，用 <think>...</think>
+            // 或 <thinking>...</thinking> 包起来。这里统一把这两种标签连同里面的内容都去掉，
+            // 只留标签后面真正的回复正文；如果回复被截断在思考过程里（只有开标签没有闭标签），
+            // 也整段去掉，避免半截思考内容混进聊天气泡里。
+            if (typeof raw === 'string') {
+                raw = raw.replace(/<think>[\s\S]*?<\/think>/gi, '');
+                raw = raw.replace(/<thinking>[\s\S]*?<\/thinking>/gi, '');
+                raw = raw.replace(/<think>[\s\S]*$/i, '');
+                raw = raw.replace(/<thinking>[\s\S]*$/i, '');
+                raw = raw.trim();
+            }
         }
         // 【标点清理】AI 偶尔会画蛇添足把句子写成"是不是？。"（问号/叹号后多一个句号）
         // 在所有 parseChatResponse 调用方接收到回复前，统一清掉这种多余的句号（中英文标点都覆盖）
