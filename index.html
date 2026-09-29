@@ -12654,11 +12654,15 @@ DB.init();
                         if (nav200) nav200.click();
                     }
                     const _ind = document.getElementById('app-home-indicator'); _ind.style.display = 'block'; if(document.getElementById('chat-page').classList.contains('active')) _ind.style.setProperty('display','none','important');
-                    // 彻底防"幽灵点击"：吞掉开 app 后紧跟着补发的那一记 click（约 350ms 内），
+                    // 彻底防"幽灵点击"：吞掉开 app 后紧跟着补发的那一记 click，
                     // 避免手机点图标那一下穿透到刚渲染出的新内容里误触按钮（如误点拍一拍/收藏/恢复主题）
+                    // 【修复"点两下才能进520"bug】这个窗口原来是 500ms，真正的幽灵点击一般紧跟在
+                    // 开 app 后几十毫秒内就会补发，500ms 太长了——用户手速快一点，
+                    // 想点开列表里的联系人这种正常的第二下操作也会落在这个窗口里被一起吞掉，
+                    // 导致要点两次才能真正点进去。缩短到 120ms，够盖住真正的幽灵点击，又不会误伤正常操作。
                     (function(){
                         const eat = (ev) => { ev.stopPropagation(); ev.preventDefault(); document.removeEventListener('click', eat, true); clearTimeout(_gt); };
-                        const _gt = setTimeout(() => document.removeEventListener('click', eat, true), 500);
+                        const _gt = setTimeout(() => document.removeEventListener('click', eat, true), 120);
                         document.addEventListener('click', eat, true);
                     })();
                 }
