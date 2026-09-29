@@ -145,7 +145,7 @@
         .nav-item-520 .icon { font-size: 20px; margin-bottom: 2px; }
         .page-content-520 { position: absolute; top: 0; left: 0; right: 0; bottom: 0; opacity: 0; pointer-events: none; overflow-y: auto; background-color: #FBF9F4; }
         .app-content-520-wrapper { flex: 1; position: relative; overflow: hidden; }
-        .page-content-520.active { opacity: 1; pointer-events: auto; }
+        .page-content-520.active { opacity: 1; pointer-events: inherit; } /* 修复：不能强制 auto，否则 520 关闭后缩成 10% 的隐形页面会盖在图标上吞点击 */
 
         /* --- 列表与聊天 --- */
         .chat-list-item { display: flex; align-items: center; padding: 12px 15px; border-bottom: 1.5px solid #e8e0d0; cursor: pointer; background: #FBF9F4; margin:0; }
@@ -12608,7 +12608,19 @@ DB.init();
                         appPage.style.transformOrigin = `${((iconRect.left + iconRect.width / 2) - screenRect.left) / screenRect.width * 100}% ${((iconRect.top + iconRect.height / 2) - screenRect.top) / screenRect.height * 100}%`;
                         appPage.classList.add('closing');
                         document.getElementById('app-home-indicator').style.display = 'none';
+                        // 【防重复清理】cleanup 只允许执行一次，并且执行时取消兜底定时器、移除监听，
+                        // 避免旧的 450ms 定时器/监听在下一次打开 app 时误触发，把刚打开的 app 又关掉
+                        let cleaned = false;
+                        let fallbackTimer = null;
+                        const onCloseAnimEnd = (ev) => {
+                            // 只认 app 页面自己的关闭动画，忽略内部子元素冒泡上来的 animationend
+                            if (ev.target === appPage && ev.animationName === 'close-app') cleanup();
+                        };
                         const cleanup = () => {
+                            if (cleaned) return;
+                            cleaned = true;
+                            clearTimeout(fallbackTimer);
+                            appPage.removeEventListener('animationend', onCloseAnimEnd);
                             appPage.classList.remove('active', 'closing');
                             document.querySelector('.mobile-container').classList.remove('app-open');
                             // 关闭 520 时隐藏内部的聊天详情页，避免下次进 520 直接显示上次的聊天
@@ -12619,13 +12631,23 @@ DB.init();
                                 setTimeout(() => { appPage.innerHTML = ''; }, 0);
                             }
                         };
-                        appPage.addEventListener('animationend', cleanup, { once: true });
-                        setTimeout(cleanup, 450);
+                        appPage.addEventListener('animationend', onCloseAnimEnd);
+                        fallbackTimer = setTimeout(cleanup, 450);
                     };
-                    if (appPage.querySelector('.close-btn')) {
-                        appPage.querySelector('.close-btn').addEventListener('click', closeApp);
+                    // 【防监听累积】每次开 app 都会重新创建 closeApp，只把最新的挂在 appPage 上；
+                    // 返回按钮（按元素）和 home 指示条（全局）都只绑定一次，点击时调用最新的 closeApp
+                    appPage._closeApp = closeApp;
+                    const _closeBtnEl = appPage.querySelector('.close-btn');
+                    if (_closeBtnEl && !_closeBtnEl._closeBound) {
+                        _closeBtnEl._closeBound = true;
+                        _closeBtnEl.addEventListener('click', () => { if (appPage._closeApp) appPage._closeApp(); });
                     }
-                    document.getElementById('app-home-indicator').addEventListener('click', closeApp);
+                    if (!window._homeIndicatorCloseBound) {
+                        window._homeIndicatorCloseBound = true;
+                        document.getElementById('app-home-indicator').addEventListener('click', () => {
+                            document.querySelectorAll('.app-page').forEach(pg => { if (pg._closeApp) pg._closeApp(); });
+                        });
+                    }
 
                     const iconRect = icon.getBoundingClientRect();
                     const screenRect = screen.getBoundingClientRect();
