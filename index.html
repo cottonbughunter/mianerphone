@@ -9040,94 +9040,351 @@ DB.init();
                 }
             }
             
+            // ===== 一起专注 · 分类配置 =====
+            const HS_FOCUS_DEFAULT_CATEGORIES = [
+                { key: 'work',   label: '工作', emoji: '💼', color: '#F2726F' },
+                { key: 'study',  label: '学习', emoji: '📖', color: '#F5B942' },
+                { key: 'read',   label: '读书', emoji: '📚', color: '#5B9BF2' },
+                { key: 'sport',  label: '运动', emoji: '🏃', color: '#4CAF8C' },
+                { key: 'other',  label: '其他', emoji: '✨', color: '#8D6FB0' },
+            ];
+            const HS_FOCUS_CAT_COLOR_PRESETS = ['#F2726F','#F5B942','#5B9BF2','#4CAF8C','#8D6FB0','#E8886F','#5FC7C7','#D97BB6','#8A9A5B','#6E7DAB'];
+            function hsGetFocusCategories(contactId) {
+                const custom = hsGet(contactId, 'focusCategories', null);
+                return (custom && custom.length) ? custom : HS_FOCUS_DEFAULT_CATEGORIES;
+            }
+            function hsSetFocusCategories(contactId, list) {
+                hsSet(contactId, 'focusCategories', list);
+            }
+            function hsFocusCatInfo(key, cats) {
+                const list = cats || HS_FOCUS_DEFAULT_CATEGORIES;
+                return list.find(x => x.key === key) || { key: key || 'unknown', label: '未分类', emoji: '❓', color: '#B9AFAF' };
+            }
+            // 分类管理弹窗：新增 / 删除自定义分类
+            function hsOpenFocusCategoryManager(appPage, c, onChange) {
+                const layer = hsOpenLayer(appPage, '管理分类', '');
+                const body = layer.querySelector('.hs-layer-body');
+                const render = () => {
+                    const cats = hsGetFocusCategories(c.id);
+                    body.innerHTML = `
+                        <div style="padding:16px 10px;">
+                            <div id="hs-fc-manage-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px;"></div>
+                            <div style="background:#fff;border-radius:14px;padding:14px;">
+                                <div style="font-size:12px;color:#9A7872;margin-bottom:10px;">新增分类</div>
+                                <div style="display:flex;gap:8px;margin-bottom:10px;">
+                                    <input id="hs-fc-new-emoji" type="text" placeholder="🎨" maxlength="4" style="width:44px;text-align:center;padding:9px 4px;border:1px solid #f0e0dc;border-radius:10px;font-size:15px;background:#FFFCFA;box-sizing:border-box;outline:none;">
+                                    <input id="hs-fc-new-label" type="text" placeholder="分类名字，比如「绘画」" style="flex:1;padding:9px 10px;border:1px solid #f0e0dc;border-radius:10px;font-size:13px;color:#775C56;background:#FFFCFA;box-sizing:border-box;outline:none;">
+                                </div>
+                                <div style="font-size:11px;color:#9A7872;margin-bottom:8px;">选个颜色</div>
+                                <div id="hs-fc-color-list" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+                                    ${HS_FOCUS_CAT_COLOR_PRESETS.map((col,i) => `<span class="hs-fc-color-dot${i===0?' hs-fc-color-sel':''}" data-color="${col}" style="width:24px;height:24px;border-radius:50%;background:${col};cursor:pointer;border:2px solid ${i===0?'#775C56':'transparent'};"></span>`).join('')}
+                                </div>
+                                <span class="hs-fc-add-btn" style="display:block;text-align:center;background:#FFD3D4;color:#775C56;padding:9px;border-radius:12px;font-size:13px;cursor:pointer;font-weight:500;">＋ 添加</span>
+                            </div>
+                        </div>
+                    `;
+                    const listEl = body.querySelector('#hs-fc-manage-list');
+                    cats.forEach(cat => {
+                        const row = document.createElement('div');
+                        row.style.cssText = 'background:#fff;border-radius:10px;padding:9px 12px;display:flex;align-items:center;gap:10px;';
+                        row.innerHTML = `<span style="width:10px;height:10px;border-radius:50%;background:${cat.color};flex-shrink:0;"></span>
+                            <span style="flex:1;font-size:13px;color:#775C56;">${cat.emoji} ${cat.label}</span>
+                            <span class="hs-fc-del" style="font-size:11px;color:#C99;cursor:pointer;padding:4px 8px;">删除</span>`;
+                        row.querySelector('.hs-fc-del').onclick = () => {
+                            if (cats.length <= 1) { alert('至少要留一个分类哦'); return; }
+                            if (!confirm(`删除分类「${cat.label}」？\n（已经记录过这个分类的专注不会被删除，图表里会显示成"未分类"）`)) return;
+                            const next = cats.filter(x => x.key !== cat.key);
+                            hsSetFocusCategories(c.id, next);
+                            render();
+                            if (onChange) onChange();
+                        };
+                        listEl.appendChild(row);
+                    });
+                    let pickedColor = HS_FOCUS_CAT_COLOR_PRESETS[0];
+                    body.querySelectorAll('.hs-fc-color-dot').forEach(dot => dot.onclick = () => {
+                        body.querySelectorAll('.hs-fc-color-dot').forEach(d => d.style.borderColor = 'transparent');
+                        dot.style.borderColor = '#775C56';
+                        pickedColor = dot.dataset.color;
+                    });
+                    body.querySelector('.hs-fc-add-btn').onclick = () => {
+                        const emoji = body.querySelector('#hs-fc-new-emoji').value.trim() || '🏷️';
+                        const label = body.querySelector('#hs-fc-new-label').value.trim();
+                        if (!label) { body.querySelector('#hs-fc-new-label').focus(); return; }
+                        const key = 'custom_' + Date.now();
+                        const next = hsGetFocusCategories(c.id).concat([{ key, label, emoji, color: pickedColor }]);
+                        hsSetFocusCategories(c.id, next);
+                        render();
+                        if (onChange) onChange();
+                    };
+                };
+                render();
+            }
+            function hsAddFocusHistory(contactId, item) {
+                const list = hsGet(contactId, 'focusHistory', []);
+                list.unshift(item);
+                if (list.length > 500) list.length = 500;
+                hsSet(contactId, 'focusHistory', list);
+            }
+            // 统计最近 N 天（默认30天）按分类汇总的时长，用于环形图
+            function hsGetFocusCategoryStats(contactId, days) {
+                days = days || 30;
+                const list = hsGet(contactId, 'focusHistory', []);
+                const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - days); cutoff.setHours(0,0,0,0);
+                const totals = {};
+                let totalMins = 0;
+                list.forEach(item => {
+                    const d = parseLocalDate(item.date);
+                    if (d < cutoff) return;
+                    const key = item.category || 'other';
+                    totals[key] = (totals[key] || 0) + (item.duration || 0);
+                    totalMins += (item.duration || 0);
+                });
+                // 从实际出现过的分类 key 里取，而不是固定列表——这样自定义分类、以及已被删除但历史里还留着的分类都能正常统计
+                const cats = hsGetFocusCategories(contactId);
+                const segments = Object.keys(totals)
+                    .map(key => ({ ...hsFocusCatInfo(key, cats), mins: totals[key] }))
+                    .filter(s => s.mins > 0)
+                    .sort((a,b) => b.mins - a.mins);
+                return { totalMins, segments };
+            }
+            // 统计最近 N 天（默认14天）每天的专注时长（按分类拆分），用于柱状图
+            function hsGetFocusDailyStats(contactId, days) {
+                days = days || 14;
+                const list = hsGet(contactId, 'focusHistory', []);
+                const byDay = {};
+                const today = new Date(); today.setHours(0,0,0,0);
+                const dayKeys = [];
+                for (let i = days - 1; i >= 0; i--) {
+                    const d = new Date(today); d.setDate(d.getDate() - i);
+                    const key = toLocalDateStr(d);
+                    dayKeys.push(key);
+                    byDay[key] = {};
+                }
+                const seenKeys = new Set();
+                list.forEach(item => {
+                    if (!byDay[item.date]) return;
+                    const key = item.category || 'other';
+                    seenKeys.add(key);
+                    byDay[item.date][key] = (byDay[item.date][key] || 0) + (item.duration || 0);
+                });
+                const days_ = dayKeys.map(key => {
+                    const cats = byDay[key];
+                    const total = Object.values(cats).reduce((a,b) => a+b, 0);
+                    const d = parseLocalDate(key);
+                    return { date: key, label: (d.getMonth()+1)+'/'+d.getDate(), total, cats };
+                });
+                return { days: days_, catKeys: Array.from(seenKeys) };
+            }
+            function hsFormatHM(mins) {
+                const h = Math.floor(mins / 60), m = Math.round(mins % 60);
+                if (h <= 0) return m + 'm';
+                return h + 'h ' + (m > 0 ? m + 'm' : '');
+            }
+            // 渲染"专注统计"（环形图 + 每日柱状图），mount 是要塞进去的容器元素
+            function hsRenderFocusStats(mount, contactId) {
+                if (!mount) return;
+                const { totalMins, segments } = hsGetFocusCategoryStats(contactId, 30);
+                const { days: daily, catKeys } = hsGetFocusDailyStats(contactId, 14);
+                const cats = hsGetFocusCategories(contactId);
+
+                const hasData = totalMins > 0;
+
+                // ---- 环形图（多段 SVG 圆弧）----
+                const R = 44, CIRC = 2 * Math.PI * R;
+                let offsetAcc = 0;
+                const arcs = hasData ? segments.map(seg => {
+                    const frac = seg.mins / totalMins;
+                    const dash = Math.max(frac * CIRC, frac > 0 ? 1.5 : 0);
+                    const gap = CIRC - dash;
+                    const rotate = -90 + offsetAcc * 360;
+                    offsetAcc += frac;
+                    return `<circle cx="60" cy="60" r="${R}" fill="none" stroke="${seg.color}" stroke-width="16" stroke-dasharray="${dash.toFixed(2)} ${gap.toFixed(2)}" transform="rotate(${rotate.toFixed(2)} 60 60)"></circle>`;
+                }).join('') : `<circle cx="60" cy="60" r="${R}" fill="none" stroke="#F0E8E2" stroke-width="16"></circle>`;
+
+                const legendHtml = hasData ? segments.map(seg => {
+                    const pct = Math.round(seg.mins / totalMins * 100);
+                    return `<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#775C56;">
+                        <span style="width:8px;height:8px;border-radius:50%;background:${seg.color};display:inline-block;flex-shrink:0;"></span>
+                        <span>${seg.emoji} ${seg.label}</span>
+                        <span style="color:#B89B95;">${hsFormatHM(seg.mins)} · ${pct}%</span>
+                    </div>`;
+                }).join('') : `<div style="font-size:11px;color:#B89B95;line-height:1.6;">还没有专注记录<br>开始第一次专注后这里会点亮～</div>`;
+
+                // ---- 每日柱状图（简单 flex 堆叠柱）----
+                const maxDay = Math.max(1, ...daily.map(d => d.total));
+                const barsHtml = daily.map(d => {
+                    const segsHtml = catKeys.map(key => {
+                        const m = d.cats[key] || 0;
+                        if (m <= 0) return '';
+                        const info = hsFocusCatInfo(key, cats);
+                        const h = Math.max(2, (m / maxDay) * 64);
+                        return `<div style="width:100%;background:${info.color};height:${h.toFixed(1)}px;" title="${info.label} ${m}分钟"></div>`;
+                    }).join('');
+                    return `<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0;">
+                        <div style="display:flex;flex-direction:column-reverse;width:60%;height:64px;border-radius:3px;overflow:hidden;background:${d.total>0?'transparent':'#F5EEE9'};">${segsHtml}</div>
+                        <div style="font-size:9px;color:#B89B95;margin-top:4px;white-space:nowrap;">${d.label}</div>
+                    </div>`;
+                }).join('');
+
+                mount.innerHTML = `
+                    <div style="text-align:left;background:#fff;border-radius:16px;padding:16px;margin-bottom:14px;">
+                        <div style="font-size:12px;color:#9A7872;margin-bottom:10px;">最近30天 · 专注分布</div>
+                        <div style="display:flex;align-items:center;gap:16px;">
+                            <div style="position:relative;width:120px;height:120px;flex-shrink:0;">
+                                <svg viewBox="0 0 120 120" style="width:100%;height:100%;">${arcs}</svg>
+                                <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                                    <div style="font-size:15px;color:${hasData ? '#775C56' : '#C9BDB6'};font-weight:600;">${hasData ? hsFormatHM(totalMins) : '0m'}</div>
+                                </div>
+                            </div>
+                            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:7px;">${legendHtml}</div>
+                        </div>
+                    </div>
+                    <div style="text-align:left;background:#fff;border-radius:16px;padding:16px;">
+                        <div style="font-size:12px;color:#9A7872;margin-bottom:12px;">最近14天 · 专注时间</div>
+                        <div style="display:flex;align-items:flex-end;gap:4px;">${barsHtml}</div>
+                    </div>
+                `;
+            }
+
             // ===== 一起专注 =====
+            // ===== 一起专注 · 会话持久化（防止切后台/锁屏/页面被系统回收导致计时丢失）=====
+            function hsSaveActiveFocus(session) {
+                try { localStorage.setItem('hs_active_focus_session', JSON.stringify(session)); } catch(e) {}
+            }
+            function hsGetActiveFocusSession() {
+                try { const v = localStorage.getItem('hs_active_focus_session'); return v ? JSON.parse(v) : null; } catch(e) { return null; }
+            }
+            function hsClearActiveFocusSession(token) {
+                const cur = hsGetActiveFocusSession();
+                if (!cur || !token || cur.token === token) {
+                    try { localStorage.removeItem('hs_active_focus_session'); } catch(e) {}
+                }
+            }
+
             function hsOpenFocus(appPage, c, userNick, onStatsUpdate) {
                 const layer = hsOpenLayer(appPage, '一起专注', '');
                 const body = layer.querySelector('.hs-layer-body');
-                // 断点续算：如果之前有一场专注因为切后台/锁屏/页面被系统回收而"消失"，
-                // 重新打开时用真实时间戳补算，该完成的直接结算掉落食物，没到时间的接着倒计时
-                const pending = hsGet(c.id, 'focusActive', null);
-                if (pending && pending.startTime && pending.mins) {
-                    const elapsedSec = Math.floor((Date.now() - pending.startTime) / 1000);
-                    const totalSec = pending.mins * 60;
-                    if (elapsedSec >= totalSec) {
-                        hsSet(c.id, 'focusActive', null);
-                        body.innerHTML = '<div style="text-align:center;padding:30px 20px;color:#9A7872;font-size:13px;">上次的专注时间已经到啦，正在结算…</div>';
-                        hsFinishFocus(appPage, layer, body, c, userNick, pending.mins, pending.task || '一件重要的事', onStatsUpdate);
+
+                // 兼容旧版：升级前正在进行的专注存在 focusActive 里，这里转成新的会话格式接着算
+                const _legacy = hsGet(c.id, 'focusActive', null);
+                if (_legacy && _legacy.startTime && _legacy.mins) {
+                    hsSet(c.id, 'focusActive', null);
+                    hsSaveActiveFocus({ token: 'focus_' + _legacy.startTime + '_legacy', contactId: c.id, userNick, startTime: _legacy.startTime, totalSeconds: _legacy.mins * 60, mins: _legacy.mins, task: _legacy.task || '一件重要的事', category: null });
+                }
+
+                // 打开页面时先检查有没有一场还没结算的专注（可能是切后台/锁屏/被系统回收之后重新打开的）
+                const active = hsGetActiveFocusSession();
+                if (active && active.contactId === c.id) {
+                    const elapsed = Math.floor((Date.now() - active.startTime) / 1000);
+                    if (elapsed >= active.totalSeconds) {
+                        // 离开期间已经跑完了：直接补记这次专注的结果，不让它悄悄消失
+                        hsClearActiveFocusSession(active.token);
+                        hsFinishFocus(appPage, layer, body, c, active.userNick || userNick, active.mins, active.task, onStatsUpdate, false, active.category);
                         return;
                     } else {
-                        hsResumeFocus(appPage, layer, body, c, userNick, pending, onStatsUpdate);
+                        // 还没跑完：恢复倒计时界面，接着算
+                        hsRunFocusTimer(appPage, layer, body, c, active.userNick || userNick, active.startTime, active.totalSeconds, active.mins, active.task, active.category, active.token, onStatsUpdate);
                         return;
                     }
                 }
-                hsRenderFocusStart(appPage, layer, body, c, userNick, onStatsUpdate);
-            }
-            function hsRenderFocusStart(appPage, layer, body, c, userNick, onStatsUpdate) {
-                body.innerHTML = `
-                    <div style="text-align:center;padding:20px 10px;">
-                        <div style="font-size:11px;color:#B89B95;letter-spacing:2px;margin-bottom:14px;">CO-FOCUS</div>
-                        <div style="background:#fff;border-radius:18px;padding:20px;margin-bottom:18px;">
-                            <div style="font-size:12px;color:#9A7872;margin-bottom:10px;">这次想专注做什么？</div>
-                            <input id="hs-focus-task" type="text" placeholder="写报告 / 看书 / 学习…" style="width:100%;padding:10px 12px;border:1px solid #f0e0dc;border-radius:10px;font-size:13px;color:#775C56;background:#FFFCFA;box-sizing:border-box;outline:none;margin-bottom:14px;">
-                            <div style="font-size:12px;color:#9A7872;margin-bottom:10px;">专注多长时间？</div>
-                            <div id="hs-focus-min-list" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
-                                <span class="hs-fm" data-min="5">5 分</span>
-                                <span class="hs-fm" data-min="10">10 分</span>
-                                <span class="hs-fm" data-min="15">15 分</span>
-                                <span class="hs-fm hs-fm-sel" data-min="25">25 分</span>
-                                <span class="hs-fm" data-min="45">45 分</span>
-                                <span class="hs-fm" data-min="60">60 分</span>
-                                <span class="hs-fm" data-min="custom" id="hs-fm-custom">自定义</span>
-                            </div>
-                            <div id="hs-fm-custom-box" style="display:none;margin-top:12px;align-items:center;justify-content:center;gap:8px;">
-                                <input id="hs-fm-custom-input" type="number" min="1" max="600" placeholder="想专注多少分钟？" style="width:150px;padding:8px 12px;border:1px solid #f0e0dc;border-radius:10px;font-size:13px;color:#775C56;background:#FFFCFA;box-sizing:border-box;outline:none;text-align:center;">
-                                <span style="font-size:12px;color:#9A7872;">分钟</span>
-                            </div>
-                        </div>
-                        <span class="hs-focus-start" style="display:inline-block;background:#FFD3D4;color:#775C56;padding:10px 36px;border-radius:16px;font-size:14px;cursor:pointer;font-weight:500;">开始专注 🍅</span>
-                        <div style="margin-top:16px;">
-                            <span class="hs-focus-dex" style="font-size:12px;color:#B89B95;cursor:pointer;border-bottom:1px dashed #D8C9C2;padding-bottom:1px;">🍱 我的食物图鉴</span>
-                        </div>
-                    </div>
-                    <style>
-                        .hs-fm { padding:8px 16px;border-radius:10px;background:#FBF6F0;color:#9A7872;font-size:12px;cursor:pointer;border:1px solid #f0e0dc; }
-                        .hs-fm.hs-fm-sel { background:#FFD3D4;color:#775C56;border-color:#FFD3D4;font-weight:500; }
-                    </style>
-                `;
+
                 let mins = 25;
-                const customBox = body.querySelector('#hs-fm-custom-box');
-                const customInput = body.querySelector('#hs-fm-custom-input');
-                const _dexLink = body.querySelector('.hs-focus-dex');
-                if (_dexLink) _dexLink.onclick = () => hsOpenFoodDex(appPage, c);
-                body.querySelectorAll('.hs-fm').forEach(el => el.onclick = () => {
-                    body.querySelectorAll('.hs-fm').forEach(x => x.classList.remove('hs-fm-sel'));
-                    el.classList.add('hs-fm-sel');
-                    if (el.dataset.min === 'custom') {
-                        customBox.style.display = 'flex';
-                        customInput.focus();
-                        const v = parseInt(customInput.value);
-                        if (v > 0) mins = Math.min(600, v);
-                    } else {
-                        customBox.style.display = 'none';
-                        mins = parseInt(el.dataset.min);
-                    }
-                });
-                customInput.addEventListener('input', () => {
-                    const v = parseInt(customInput.value);
-                    if (v > 0) mins = Math.min(600, v);
-                });
-                body.querySelector('.hs-focus-start').onclick = () => {
-                    if (!(mins > 0)) { alert('先填一下想专注多少分钟吧～'); customInput.focus(); return; }
-                    const task = body.querySelector('#hs-focus-task').value.trim() || '一件重要的事';
-                    hsStartFocus(appPage, layer, body, c, userNick, mins, task, onStatsUpdate);
+                let usingCustom = false;
+                let selectedCat = null;
+
+                const renderForm = () => {
+                    const categories = hsGetFocusCategories(c.id);
+                    if (!selectedCat || !categories.find(x => x.key === selectedCat)) selectedCat = categories[0].key;
+                    body.innerHTML = `
+                        <div style="text-align:center;padding:20px 10px;">
+                            <div style="font-size:11px;color:#B89B95;letter-spacing:2px;margin-bottom:14px;">CO-FOCUS</div>
+                            <div style="background:#fff;border-radius:18px;padding:20px;margin-bottom:18px;">
+                                <div style="font-size:12px;color:#9A7872;margin-bottom:10px;">这次想专注做什么？</div>
+                                <input id="hs-focus-task" type="text" placeholder="写报告 / 看书 / 学习…" style="width:100%;padding:10px 12px;border:1px solid #f0e0dc;border-radius:10px;font-size:13px;color:#775C56;background:#FFFCFA;box-sizing:border-box;outline:none;margin-bottom:14px;">
+                                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                                    <span style="font-size:12px;color:#9A7872;">属于哪一类？</span>
+                                    <span class="hs-focus-cat-manage" style="font-size:11px;color:#B89B95;text-decoration:underline;cursor:pointer;">管理分类</span>
+                                </div>
+                                <div id="hs-focus-cat-list" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:14px;">
+                                    ${categories.map(cat => `<span class="hs-fc${cat.key===selectedCat?' hs-fc-sel':''}" data-cat="${cat.key}" style="padding:7px 13px;border-radius:10px;background:${cat.key===selectedCat?cat.color:'#FBF6F0'};color:${cat.key===selectedCat?'#fff':'#9A7872'};font-size:12px;cursor:pointer;border:1px solid ${cat.key===selectedCat?cat.color:'#f0e0dc'};">${cat.emoji} ${cat.label}</span>`).join('')}
+                                </div>
+                                <div style="font-size:12px;color:#9A7872;margin-bottom:10px;">专注多长时间？</div>
+                                <div id="hs-focus-min-list" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+                                    <span class="hs-fm" data-min="5">5 分</span>
+                                    <span class="hs-fm" data-min="10">10 分</span>
+                                    <span class="hs-fm" data-min="15">15 分</span>
+                                    <span class="hs-fm hs-fm-sel" data-min="25">25 分</span>
+                                    <span class="hs-fm" data-min="45">45 分</span>
+                                    <span class="hs-fm" data-min="60">60 分</span>
+                                    <span class="hs-fm" data-min="custom">自定义</span>
+                                </div>
+                                <div id="hs-focus-custom-wrap" style="display:none;margin-top:10px;">
+                                    <input id="hs-focus-custom-min" type="number" min="1" max="600" placeholder="填个分钟数～" style="width:130px;padding:8px 12px;border:1px solid #f0e0dc;border-radius:10px;font-size:13px;color:#775C56;background:#FFFCFA;box-sizing:border-box;outline:none;text-align:center;">
+                                </div>
+                            </div>
+                            <span class="hs-focus-start" style="display:inline-block;background:#FFD3D4;color:#775C56;padding:10px 36px;border-radius:16px;font-size:14px;cursor:pointer;font-weight:500;">开始专注 🍅</span>
+                            <div class="hs-focus-dex-entry" style="margin-top:18px;font-size:12px;color:#B89B95;cursor:pointer;text-decoration:underline;">🍱 我的食物图鉴</div>
+                            <div id="hs-focus-stats-mount" style="margin-top:26px;"></div>
+                        </div>
+                        <style>
+                            .hs-fm { padding:8px 16px;border-radius:10px;background:#FBF6F0;color:#9A7872;font-size:12px;cursor:pointer;border:1px solid #f0e0dc; }
+                            .hs-fm.hs-fm-sel { background:#FFD3D4;color:#775C56;border-color:#FFD3D4;font-weight:500; }
+                        </style>
+                    `;
+                    mins = 25; usingCustom = false;
+                    const customWrap = body.querySelector('#hs-focus-custom-wrap');
+                    const customInput = body.querySelector('#hs-focus-custom-min');
+                    body.querySelectorAll('.hs-fc').forEach(el => el.onclick = () => {
+                        const cs = hsGetFocusCategories(c.id);
+                        body.querySelectorAll('.hs-fc').forEach(x => {
+                            x.classList.remove('hs-fc-sel');
+                            x.style.background = '#FBF6F0';
+                            x.style.color = '#9A7872';
+                            x.style.borderColor = '#f0e0dc';
+                        });
+                        const info = hsFocusCatInfo(el.dataset.cat, cs);
+                        el.classList.add('hs-fc-sel');
+                        el.style.background = info.color;
+                        el.style.color = '#fff';
+                        el.style.borderColor = info.color;
+                        selectedCat = el.dataset.cat;
+                    });
+                    body.querySelectorAll('.hs-fm').forEach(el => el.onclick = () => {
+                        body.querySelectorAll('.hs-fm').forEach(x => x.classList.remove('hs-fm-sel'));
+                        el.classList.add('hs-fm-sel');
+                        if (el.dataset.min === 'custom') {
+                            usingCustom = true;
+                            customWrap.style.display = 'block';
+                            setTimeout(() => { try { customInput.focus(); } catch(e){} }, 30);
+                            const cur = parseInt(customInput.value, 10);
+                            if (cur >= 1) mins = Math.min(600, cur);
+                        } else {
+                            usingCustom = false;
+                            customWrap.style.display = 'none';
+                            mins = parseInt(el.dataset.min, 10);
+                        }
+                    });
+                    customInput.oninput = () => {
+                        const v = parseInt(customInput.value, 10);
+                        if (v >= 1) mins = Math.min(600, v);
+                    };
+                    body.querySelector('.hs-focus-start').onclick = () => {
+                        if (usingCustom) {
+                            const v = parseInt(customInput.value, 10);
+                            if (!(v >= 1)) { customInput.focus(); customInput.style.borderColor = '#e9a6a6'; return; }
+                            mins = Math.min(600, v);
+                        }
+                        const task = body.querySelector('#hs-focus-task').value.trim() || '一件重要的事';
+                        hsStartFocus(appPage, layer, body, c, userNick, mins, task, onStatsUpdate, selectedCat);
+                    };
+                    body.querySelector('.hs-focus-dex-entry').onclick = () => hsOpenFoodDex(appPage, c);
+                    body.querySelector('.hs-focus-cat-manage').onclick = () => hsOpenFocusCategoryManager(appPage, c, renderForm);
+                    hsRenderFocusStats(body.querySelector('#hs-focus-stats-mount'), c.id);
                 };
+                renderForm();
             }
             
-            // 续算专注：页面被切后台/锁屏/系统回收导致计时器丢失，但还没到时间，重新打开时接着倒计时
-            function hsResumeFocus(appPage, layer, body, c, userNick, pending, onStatsUpdate) {
-                hsStartFocus(appPage, layer, body, c, userNick, pending.mins, pending.task || '一件重要的事', onStatsUpdate, pending.startTime);
-            }
-            async function hsStartFocus(appPage, layer, body, c, userNick, mins, task, onStatsUpdate, resumeStartTime) {
+            function hsRunFocusTimer(appPage, layer, body, c, userNick, startTime, total, mins, task, category, token, onStatsUpdate) {
                 // 进入专注模式
                 body.innerHTML = `
                     <div style="text-align:center;padding:10px 14px;">
@@ -9150,20 +9407,16 @@ DB.init();
                         </div>
                     </div>
                 `;
-                
-                const total = mins * 60;
+
                 let remain = total;
                 let companionTimer = null;
                 let mainTimer = null;
-                const startTime = resumeStartTime || Date.now();
-                // 记下这场专注的起点，万一页面被切后台/锁屏/系统回收导致计时器丢失，
-                // 重新打开时能用真实时间戳补算，不会白白错过掉落
-                hsSet(c.id, 'focusActive', { startTime, mins, task });
+                let finalized = false;
                 const progEl = body.querySelector('#hs-focus-prog');
                 const timeEl = body.querySelector('#hs-focus-time');
                 const msgEl = body.querySelector('#hs-focus-msg');
                 const CIRC = 276.46;
-                
+
                 // 先生成 TA 现在在做什么作为陪伴文案
                 async function genCompanion() {
                     try {
@@ -9176,38 +9429,61 @@ DB.init();
                 }
                 genCompanion();
                 companionTimer = setInterval(genCompanion, 5 * 60 * 1000); // 每 5 分钟刷新
-                
+
+                // 页面从后台切回前台时，立刻用真实时间校正一次显示，不用等下一个 tick
+                function onVisible() { if (document.visibilityState === 'visible') tick(); }
+                document.addEventListener('visibilitychange', onVisible);
+
+                // 保证无论是正常倒计时结束、手动结束、还是重开页面时发现已经跑完，都只结算一次
+                function finalizeOnce(isEarly, overrideMins) {
+                    if (finalized) return;
+                    finalized = true;
+                    clearInterval(mainTimer);
+                    clearInterval(companionTimer);
+                    document.removeEventListener('visibilitychange', onVisible);
+                    const cur = hsGetActiveFocusSession();
+                    if (!cur || cur.token !== token) return; // 已经在别处（比如重新打开页面时）结算过了
+                    hsClearActiveFocusSession(token);
+                    const finalMins = overrideMins != null ? overrideMins : mins;
+                    hsFinishFocus(appPage, layer, body, c, userNick, finalMins, task, onStatsUpdate, !!isEarly, category);
+                }
+
                 function tick() {
-                    // 用真实时间戳算剩余，而不是单纯递减 —— 后台标签页被节流时也不会计时不准
-                    remain = total - Math.floor((Date.now() - startTime) / 1000);
+                    // 用「当前时间 - 开始时间」换算剩余时间，而不是单纯把 remain 减一——
+                    // 这样即使切后台/锁屏导致 setInterval 被浏览器节流、少跑了几次，重新恢复时也能自动校正回正确的剩余时间
+                    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                    remain = total - elapsed;
                     if (remain <= 0) {
-                        clearInterval(mainTimer);
-                        clearInterval(companionTimer);
-                        hsSet(c.id, 'focusActive', null);
-                        hsFinishFocus(appPage, layer, body, c, userNick, mins, task, onStatsUpdate);
+                        finalizeOnce(false);
                         return;
                     }
                     const m = Math.floor(remain / 60), s = remain % 60;
                     timeEl.textContent = m + ':' + String(s).padStart(2,'0');
                     progEl.style.strokeDashoffset = (CIRC * (1 - remain / total)).toFixed(2);
                 }
-                tick();
                 mainTimer = setInterval(tick, 1000);
-                
+                tick(); // 立刻算一次，恢复中断的专注时不会先短暂闪一下旧数字
+
                 body.querySelector('.hs-focus-stop').onclick = () => {
-                    if (!confirm('提前结束这次专注？\n（已专注 ' + Math.floor((Date.now() - startTime) / 60000) + ' 分钟）')) return;
-                    clearInterval(mainTimer);
-                    clearInterval(companionTimer);
-                    hsSet(c.id, 'focusActive', null);
-                    const actualMins = Math.max(1, Math.floor((Date.now() - startTime) / 60000));
-                    // 只有专注满至少1分钟才计入
-                    if (actualMins >= 1) {
-                        hsFinishFocus(appPage, layer, body, c, userNick, actualMins, task, onStatsUpdate, true);
-                    } else {
-                        layer.remove();
-                    }
+                    const livedMins = Math.max(1, Math.floor((Date.now() - startTime) / 60000));
+                    if (!confirm('提前结束这次专注？\n（已专注 ' + livedMins + ' 分钟）')) return;
+                    finalizeOnce(true, livedMins);
                 };
+
+                // 专注进行中点左上角"‹"返回：以前会让计时器在后台孤立运行、完成时用户根本看不到结果，
+                // 现在统一走"结束"那套确认逻辑，不会再悄悄跑丢
+                const backBtn = layer.querySelector('.hs-layer-back');
+                if (backBtn) backBtn.onclick = () => body.querySelector('.hs-focus-stop').click();
             }
+
+            async function hsStartFocus(appPage, layer, body, c, userNick, mins, task, onStatsUpdate, category) {
+                const total = mins * 60;
+                const startTime = Date.now();
+                const token = 'focus_' + startTime + '_' + Math.random().toString(36).slice(2, 8);
+                hsSaveActiveFocus({ token, contactId: c.id, userNick, startTime, totalSeconds: total, mins, task, category });
+                hsRunFocusTimer(appPage, layer, body, c, userNick, startTime, total, mins, task, category, token, onStatsUpdate);
+            }
+
             
             // ===== 专注掉落·食物图鉴 =====
             const HS_FOODS = [
@@ -9258,7 +9534,7 @@ DB.init();
                 );
             }
 
-            async function hsFinishFocus(appPage, layer, body, c, userNick, mins, task, onStatsUpdate, isEarly) {
+            async function hsFinishFocus(appPage, layer, body, c, userNick, mins, task, onStatsUpdate, isEarly, category) {
                 // 掉落食物
                 const food = hsRollFood(mins, !isEarly);
                 const foodCount = hsAddFood(c.id, food.k);
@@ -9298,7 +9574,9 @@ DB.init();
                 const cheerEl = body.querySelector('#hs-focus-cheer');
                 if (cheerEl) cheerEl.textContent = cheer;
 
-                hsAddMemory(c.id, { type: 'focus', duration: mins, task: task, cheer: cheer, food: food.k });
+                hsAddMemory(c.id, { type: 'focus', duration: mins, task: task, cheer: cheer, food: food.k, category: category });
+                // 单独存一份专注历史，用于统计图表（不受 memory 100 条上限影响）
+                hsAddFocusHistory(c.id, { duration: mins, task: task, category: category || 'other', date: toLocalDateStr(new Date()) });
                 if (onStatsUpdate) onStatsUpdate();
 
                 body.querySelector('.hs-focus-back').onclick = () => layer.remove();
@@ -9307,6 +9585,7 @@ DB.init();
             }
 
             
+
             // ===== 情感问卷 =====
             function hsOpenQuiz(appPage, c, userNick) {
                 const isPartner = hsIsPartner(c, userNick);
@@ -9832,10 +10111,148 @@ DB.init();
                 };
             }
             
+            // ===== 打卡统计：最近7天柱状图 / 月历 / 年度圆环 =====
+            // 打卡项目可能不止 8 个，固定写死一张 8 色表总会在第 9 个开始循环撞色。
+            // 这里改成用"黄金角"（约 137.5°）在色环上依次往后转：每多一个新项目，
+            // 只需要接着上一个颜色再转一个黄金角，不用知道总共有多少项、也不用重新
+            // 计算前面已经分配好的颜色——这个角度的数学性质保证了不管转多少次、
+            // 不管总数是 8 个还是 20 个，相邻几个颜色的色相都不会挤在一起分不清。
+            function hsHslToHex(h, s, l) {
+                h = ((h % 360) + 360) % 360 / 360; s /= 100; l /= 100;
+                const hue2rgb = (p, q, t) => {
+                    if (t < 0) t += 1; if (t > 1) t -= 1;
+                    if (t < 1 / 6) return p + (q - p) * 6 * t;
+                    if (t < 1 / 2) return q;
+                    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+                    return p;
+                };
+                let r, g, b;
+                if (s === 0) { r = g = b = l; }
+                else {
+                    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                    const p = 2 * l - q;
+                    r = hue2rgb(p, q, h + 1 / 3);
+                    g = hue2rgb(p, q, h);
+                    b = hue2rgb(p, q, h - 1 / 3);
+                }
+                const toHex = (x) => Math.round(x * 255).toString(16).padStart(2, '0');
+                return '#' + toHex(r) + toHex(g) + toHex(b);
+            }
+            const HS_HABIT_GOLDEN_ANGLE = 137.50776;
+            const HS_HABIT_START_HUE = 355; // 第一个颜色对齐之前选定的柔粉色，习惯不变
+            function hsHabitColor(i) {
+                return hsHslToHex(HS_HABIT_START_HUE + i * HS_HABIT_GOLDEN_ANGLE, 45, 68);
+            }
+
+            function hsHabitWeekCounts(habits) {
+                const days = [];
+                const today = new Date(); today.setHours(0, 0, 0, 0);
+                for (let i = 6; i >= 0; i--) {
+                    const d = new Date(today); d.setDate(d.getDate() - i);
+                    const ds = toLocalDateStr(d);
+                    const count = habits.filter(h => (h.history || []).includes(ds)).length;
+                    days.push({ date: d, dateStr: ds, count, isToday: i === 0 });
+                }
+                return days;
+            }
+
+            function hsHabitMonthCalendar(habits, year, month) {
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const firstWeekday = new Date(year, month, 1).getDay();
+                const todayStr = toLocalDateStr(new Date());
+                const days = [];
+                for (let d = 1; d <= daysInMonth; d++) {
+                    const ds = toLocalDateStr(new Date(year, month, d));
+                    const count = habits.filter(h => (h.history || []).includes(ds)).length;
+                    days.push({ day: d, dateStr: ds, count, isToday: ds === todayStr });
+                }
+                return { daysInMonth, firstWeekday, days };
+            }
+
+            function hsHabitYearTotals(habits, year) {
+                return habits.map((h, i) => ({
+                    name: h.name, emoji: h.emoji || '🌱',
+                    count: (h.history || []).filter(ds => ds.startsWith(String(year) + '-')).length,
+                    color: hsHabitColor(i)
+                })).filter(x => x.count > 0).sort((a, b) => b.count - a.count);
+            }
+
+            function hsRenderHabitWeekChart(weekData) {
+                const maxCount = Math.max(1, ...weekData.map(d => d.count));
+                const barW = 22, gap = 12, chartH = 60;
+                const totalW = weekData.length * barW + (weekData.length - 1) * gap;
+                const weekdayLabels = ['日', '一', '二', '三', '四', '五', '六'];
+                let bars = '';
+                weekData.forEach((d, i) => {
+                    const h = d.count > 0 ? Math.max(4, (d.count / maxCount) * chartH) : 2;
+                    const x = i * (barW + gap);
+                    const y = chartH - h;
+                    const color = d.isToday ? '#7CB17C' : '#CFE7D4';
+                    bars += `<rect x="${x}" y="${y}" width="${barW}" height="${h}" rx="6" fill="${color}"/>`;
+                    if (d.count > 0) bars += `<text x="${x + barW / 2}" y="${y - 5}" text-anchor="middle" font-size="10" fill="#775C56" font-weight="600">${d.count}</text>`;
+                    bars += `<text x="${x + barW / 2}" y="${chartH + 16}" text-anchor="middle" font-size="10" fill="${d.isToday ? '#7CB17C' : '#9A7872'}" font-weight="${d.isToday ? '700' : '400'}">${weekdayLabels[d.date.getDay()]}</text>`;
+                });
+                return `<svg viewBox="0 0 ${totalW} ${chartH + 26}" style="width:100%;height:92px;overflow:visible;display:block;">${bars}</svg>`;
+            }
+
+            function hsRenderHabitCalendarGrid(cal, totalHabits) {
+                return `
+                    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;">
+                        ${Array(cal.firstWeekday).fill('<span></span>').join('')}
+                        ${cal.days.map(d => {
+                            let cell = 'color:#775C56;';
+                            if (d.count > 0) {
+                                const ratio = totalHabits > 0 ? Math.min(1, d.count / totalHabits) : 1;
+                                const alpha = (0.28 + ratio * 0.55).toFixed(2);
+                                cell += `background:rgba(124,177,124,${alpha});color:${ratio > 0.55 ? '#fff' : '#4C7A4C'};font-weight:600;`;
+                            }
+                            if (d.isToday) cell += 'box-shadow:0 0 0 1.5px #775C56 inset;';
+                            return `<span style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:11px;${cell}">${d.day}</span>`;
+                        }).join('')}
+                    </div>
+                `;
+            }
+
+            function hsRenderHabitYearRing(yearTotals, year) {
+                const total = yearTotals.reduce((s, x) => s + x.count, 0);
+                if (total === 0) {
+                    return `<div style="text-align:center;color:#B89B95;font-size:12px;padding:24px 0;">${year} 年还没有打卡记录</div>`;
+                }
+                const r = 50, cx = 60, cy = 60, sw = 15;
+                const circumference = 2 * Math.PI * r;
+                let cumulative = 0;
+                const arcs = yearTotals.map(h => {
+                    const segLen = (h.count / total) * circumference;
+                    const gapPx = yearTotals.length > 1 ? 2 : 0;
+                    const dasharray = `${Math.max(0, segLen - gapPx).toFixed(2)} ${(circumference - segLen + gapPx).toFixed(2)}`;
+                    const dashoffset = (-cumulative).toFixed(2);
+                    cumulative += segLen;
+                    return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${h.color}" stroke-width="${sw}" stroke-dasharray="${dasharray}" stroke-dashoffset="${dashoffset}" stroke-linecap="round"/>`;
+                }).join('');
+                return `
+                    <div style="display:flex;align-items:center;gap:16px;">
+                        <svg width="120" height="120" viewBox="0 0 120 120" style="transform:rotate(-90deg);flex-shrink:0;">${arcs}</svg>
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-size:11px;color:#9A7872;margin-bottom:8px;">${year} 年累计打卡 <b style="color:#775C56;font-size:14px;">${total}</b> 次</div>
+                            ${yearTotals.map(h => `
+                                <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;font-size:11px;color:#775C56;">
+                                    <span style="width:8px;height:8px;border-radius:50%;background:${h.color};flex-shrink:0;"></span>
+                                    <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${h.emoji} ${h.name}</span>
+                                    <span style="color:#9A7872;flex-shrink:0;">${h.count}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
             // ===== 共同打卡 =====
             function hsOpenHabits(appPage, c, userNick) {
                 const layer = hsOpenLayer(appPage, '一起打卡', '');
                 const body = layer.querySelector('.hs-layer-body');
+                const now = new Date();
+                let habitCalYear = now.getFullYear();
+                let habitCalMonth = now.getMonth();
                 
                 const renderList = () => {
                     const habits = hsGet(c.id, 'healthHabits', []);
@@ -9876,9 +10293,28 @@ DB.init();
                         <div style="margin-bottom:14px;text-align:center;">
                             <div style="font-size:11px;color:#9A7872;letter-spacing:1px;">${todayStr} · 今天</div>
                         </div>
+                        <div style="background:#fff;border-radius:14px;padding:14px 14px 4px;margin-bottom:14px;border:1px solid #f0e0dc;">
+                            <div style="font-size:12px;color:#775C56;font-weight:600;margin-bottom:6px;">最近7天</div>
+                            ${hsRenderHabitWeekChart(hsHabitWeekCounts(habits))}
+                        </div>
                         <div id="hs-habit-list"></div>
                         <div style="text-align:center;margin-top:20px;padding-bottom:14px;">
                             <span class="hs-habit-add" style="background:#D5EBE4;color:#775C56;padding:8px 22px;border-radius:14px;font-size:13px;cursor:pointer;display:inline-block;">+ 添加目标</span>
+                        </div>
+                        <div style="background:#fff;border-radius:14px;padding:14px;margin-bottom:14px;border:1px solid #f0e0dc;">
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                                <span id="hs-habit-cal-prev" style="width:26px;height:26px;border-radius:50%;background:#FBF6F0;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#B89B95;font-size:13px;">‹</span>
+                                <span id="hs-habit-cal-title" style="font-size:13px;color:#775C56;font-weight:600;"></span>
+                                <span id="hs-habit-cal-next" style="width:26px;height:26px;border-radius:50%;background:#FBF6F0;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#B89B95;font-size:13px;">›</span>
+                            </div>
+                            <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;font-size:10px;color:#B89B95;text-align:center;margin-bottom:6px;">
+                                ${['日','一','二','三','四','五','六'].map(w => `<span>${w}</span>`).join('')}
+                            </div>
+                            <div id="hs-habit-cal-body"></div>
+                        </div>
+                        <div style="background:#fff;border-radius:14px;padding:14px;margin-bottom:14px;border:1px solid #f0e0dc;">
+                            <div style="font-size:12px;color:#775C56;font-weight:600;margin-bottom:10px;">年度统计</div>
+                            ${hsRenderHabitYearRing(hsHabitYearTotals(habits, now.getFullYear()), now.getFullYear())}
                         </div>
                         ${(() => {
                             const boxes = [];
@@ -9889,6 +10325,23 @@ DB.init();
                             return boxes.length ? `<div style="margin-bottom:8px;">${boxes.join('')}</div>` : '';
                         })()}
                     `;
+
+                    const renderCalSection = () => {
+                        const cal = hsHabitMonthCalendar(habits, habitCalYear, habitCalMonth);
+                        body.querySelector('#hs-habit-cal-title').textContent = `${habitCalYear}年${habitCalMonth + 1}月`;
+                        body.querySelector('#hs-habit-cal-body').innerHTML = hsRenderHabitCalendarGrid(cal, habits.length);
+                    };
+                    renderCalSection();
+                    body.querySelector('#hs-habit-cal-prev').onclick = () => {
+                        habitCalMonth--;
+                        if (habitCalMonth < 0) { habitCalMonth = 11; habitCalYear--; }
+                        renderCalSection();
+                    };
+                    body.querySelector('#hs-habit-cal-next').onclick = () => {
+                        habitCalMonth++;
+                        if (habitCalMonth > 11) { habitCalMonth = 0; habitCalYear++; }
+                        renderCalSection();
+                    };
                     
                     const listEl = body.querySelector('#hs-habit-list');
                     habits.forEach((h, idx) => {
@@ -9905,7 +10358,10 @@ DB.init();
                                 </div>
                                 <div style="font-size:10px;color:#9A7872;">${streak > 0 ? `🔥 连续 ${streak} 天` : '今天开始呀'}${h.aiReply && done ? ' · TA 也打卡了' : ''}</div>
                             </div>
-                            <span class="hs-habit-del" data-idx="${idx}" style="font-size:11px;color:#B89B95;cursor:pointer;padding:4px 8px;">删除</span>
+                            <div style="display:flex;align-items:center;gap:2px;flex-shrink:0;">
+                                <span class="hs-habit-edit" data-idx="${idx}" style="font-size:11px;color:#8AA9C4;cursor:pointer;padding:4px 6px;">编辑</span>
+                                <span class="hs-habit-del" data-idx="${idx}" style="font-size:11px;color:#B89B95;cursor:pointer;padding:4px 6px;">删除</span>
+                            </div>
                         `;
                         listEl.appendChild(card);
                     });
@@ -9953,6 +10409,13 @@ DB.init();
                         };
                     });
                     
+                    body.querySelectorAll('.hs-habit-edit').forEach(el => {
+                        el.onclick = () => {
+                            const idx = parseInt(el.dataset.idx);
+                            hsEditHabit(appPage, c, idx, renderList);
+                        };
+                    });
+
                     body.querySelectorAll('.hs-habit-del').forEach(el => {
                         el.onclick = () => {
                             const idx = parseInt(el.dataset.idx);
@@ -10017,6 +10480,40 @@ DB.init();
                     const name = dlg.querySelector('#hs-habit-name').value.trim();
                     if (!name) { alert('给目标起个名字吧'); return; }
                     doAdd(emoji, name);
+                };
+                dlg.onclick = (e) => { if (e.target === dlg) dlg.remove(); };
+            }
+
+            function hsEditHabit(appPage, c, idx, onDone) {
+                const habits = hsGet(c.id, 'healthHabits', []);
+                const h = habits[idx];
+                if (!h) return;
+                const dlg = document.createElement('div');
+                dlg.style.cssText = 'position:absolute;inset:0;background:rgba(0,0,0,0.4);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;border-radius:30px;';
+                dlg.innerHTML = `<div style="background:#FBF9F4;border-radius:14px;padding:16px;max-width:280px;width:100%;">
+                    <div style="font-size:14px;color:#775C56;font-weight:600;text-align:center;margin-bottom:14px;">编辑目标</div>
+                    <div style="display:flex;gap:6px;margin-bottom:14px;">
+                        <input id="hs-habit-edit-emoji" maxlength="2" value="${(h.emoji || '🌱').replace(/"/g, '&quot;')}" style="width:50px;padding:8px;border:1px solid #f0e0dc;border-radius:8px;text-align:center;font-size:16px;background:#fff;outline:none;">
+                        <input id="hs-habit-edit-name" maxlength="20" value="${(h.name || '').replace(/"/g, '&quot;')}" style="flex:1;padding:8px 10px;border:1px solid #f0e0dc;border-radius:8px;font-size:13px;color:#775C56;background:#fff;outline:none;">
+                    </div>
+                    <div style="display:flex;gap:8px;justify-content:center;">
+                        <span class="hs-edit-cancel" style="background:#fff;color:#9A7872;padding:6px 20px;border-radius:12px;font-size:12px;cursor:pointer;border:1px solid #f0e0dc;">取消</span>
+                        <span class="hs-edit-ok" style="background:#FFD3D4;color:#775C56;padding:6px 20px;border-radius:12px;font-size:12px;cursor:pointer;">保存</span>
+                    </div>
+                </div>`;
+                appPage.appendChild(dlg);
+                dlg.querySelector('.hs-edit-cancel').onclick = () => dlg.remove();
+                dlg.querySelector('.hs-edit-ok').onclick = () => {
+                    const emoji = dlg.querySelector('#hs-habit-edit-emoji').value.trim() || '🌱';
+                    const name = dlg.querySelector('#hs-habit-edit-name').value.trim();
+                    if (!name) { alert('给目标起个名字吧'); return; }
+                    const latestHabits = hsGet(c.id, 'healthHabits', []);
+                    if (!latestHabits[idx]) { dlg.remove(); return; }
+                    latestHabits[idx].emoji = emoji;
+                    latestHabits[idx].name = name;
+                    hsSet(c.id, 'healthHabits', latestHabits);
+                    dlg.remove();
+                    if (onDone) onDone();
                 };
                 dlg.onclick = (e) => { if (e.target === dlg) dlg.remove(); };
             }
